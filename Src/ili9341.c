@@ -208,15 +208,19 @@ void ILI9341_Init() {
     ILI9341_Unselect();
 }
 
+static void ILI9341_DrawPixelFast(uint16_t x, uint16_t y, uint16_t color) {
+    ILI9341_SetAddressWindow(x, y, x + 1, y + 1);
+    uint8_t data[] = {color >> 8, color & 0xFF};
+    ILI9341_WriteData(data, sizeof(data));
+}
+
 void ILI9341_DrawPixel(uint16_t x, uint16_t y, uint16_t color) {
     if ((x >= ILI9341_WIDTH) || (y >= ILI9341_HEIGHT))
         return;
 
     ILI9341_Select();
 
-    ILI9341_SetAddressWindow(x, y, x + 1, y + 1);
-    uint8_t data[] = {color >> 8, color & 0xFF};
-    ILI9341_WriteData(data, sizeof(data));
+    ILI9341_DrawPixelFast(x, y, color);
 
     ILI9341_Unselect();
 }
@@ -266,6 +270,18 @@ void ILI9341_WriteString(uint16_t x, uint16_t y, const char* str, FontDef font, 
     ILI9341_Unselect();
 }
 
+static void ILI9341_FillRectangleFast(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color) {
+    ILI9341_SetAddressWindow(x, y, x + w - 1, y + h - 1);
+
+    uint8_t data[] = {color >> 8, color & 0xFF};
+    HAL_GPIO_WritePin(ILI9341_DC_GPIO_Port, ILI9341_DC_Pin, GPIO_PIN_SET);
+    for (uint16_t row = 0; row < h; row++) {
+        for (uint16_t col = 0; col < w; col++) {
+            HAL_SPI_Transmit(&ILI9341_SPI_PORT, data, sizeof(data), HAL_MAX_DELAY);
+        }
+    }
+}
+
 void ILI9341_FillRectangle(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color) {
     // clipping
     if ((x >= ILI9341_WIDTH) || (y >= ILI9341_HEIGHT)) return;
@@ -273,15 +289,8 @@ void ILI9341_FillRectangle(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint1
     if ((y + h - 1) >= ILI9341_HEIGHT) h = ILI9341_HEIGHT - y;
 
     ILI9341_Select();
-    ILI9341_SetAddressWindow(x, y, x + w - 1, y + h - 1);
 
-    uint8_t data[] = {color >> 8, color & 0xFF};
-    HAL_GPIO_WritePin(ILI9341_DC_GPIO_Port, ILI9341_DC_Pin, GPIO_PIN_SET);
-    for (y = h; y > 0; y--) {
-        for (x = w; x > 0; x--) {
-            HAL_SPI_Transmit(&ILI9341_SPI_PORT, data, sizeof(data), HAL_MAX_DELAY);
-        }
-    }
+    ILI9341_FillRectangleFast(x, y, w, h, color);
 
     ILI9341_Unselect();
 }
@@ -333,8 +342,10 @@ void ILI9341_DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16
     int16_t dy = -abs(y2 - y1), sy = y1 < y2 ? 1 : -1;
     int16_t err = dx + dy, e2; /* error value e_xy */
 
+    ILI9341_Select();
+
     for (;;) { /* loop */
-        ILI9341_DrawPixel(x1, y1, color);
+        ILI9341_DrawPixelFast(x1, y1, color);
         if (x1 == x2 && y1 == y2) break;
         e2 = 2 * err;
         if (e2 >= dy) { /* e_xy+e_x > 0 */
@@ -346,15 +357,21 @@ void ILI9341_DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16
             y1 += sy;
         }
     }
+
+    ILI9341_Unselect();
 }
 
 void ILI9341_DrawRectangle(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color) {
     if ((x >= ILI9341_WIDTH) || (y >= ILI9341_HEIGHT) || ((x + w - 1) >= ILI9341_WIDTH) || ((y + h - 1) >= ILI9341_HEIGHT)) return;
 
-    ILI9341_DrawLine(x, y, x + w - 1, y, color);
-    ILI9341_DrawLine(x, y + h - 1, x + w - 1, y + h - 1, color);
-    ILI9341_DrawLine(x, y, x, y + h - 1, color);
-    ILI9341_DrawLine(x + w - 1, y, x + w - 1, y + h - 1, color);
+    ILI9341_Select();
+
+    ILI9341_FillRectangleFast(x, y, w, 1, color);
+    ILI9341_FillRectangleFast(x, y + h - 1, w, 1, color);
+    ILI9341_FillRectangleFast(x, y, 1, h, color);
+    ILI9341_FillRectangleFast(x + w - 1, y, 1, h, color);
+
+    ILI9341_Unselect();
 }
 
 void ILI9341_DrawCircle(uint16_t x0, uint16_t y0, uint16_t r, uint16_t color) {
@@ -367,10 +384,12 @@ void ILI9341_DrawCircle(uint16_t x0, uint16_t y0, uint16_t r, uint16_t color) {
     int16_t x = 0;
     int16_t y = r;
 
-    ILI9341_DrawPixel(x0, y0 + r, color);
-    ILI9341_DrawPixel(x0, y0 - r, color);
-    ILI9341_DrawPixel(x0 + r, y0, color);
-    ILI9341_DrawPixel(x0 - r, y0, color);
+    ILI9341_Select();
+
+    ILI9341_DrawPixelFast(x0, y0 + r, color);
+    ILI9341_DrawPixelFast(x0, y0 - r, color);
+    ILI9341_DrawPixelFast(x0 + r, y0, color);
+    ILI9341_DrawPixelFast(x0 - r, y0, color);
 
     while (x < y) {
         if (f >= 0) {
@@ -382,29 +401,35 @@ void ILI9341_DrawCircle(uint16_t x0, uint16_t y0, uint16_t r, uint16_t color) {
         ddF_x += 2;
         f += ddF_x;
 
-        ILI9341_DrawPixel(x0 + x, y0 + y, color);
-        ILI9341_DrawPixel(x0 - x, y0 + y, color);
-        ILI9341_DrawPixel(x0 + x, y0 - y, color);
-        ILI9341_DrawPixel(x0 - x, y0 - y, color);
-        ILI9341_DrawPixel(x0 + y, y0 + x, color);
-        ILI9341_DrawPixel(x0 - y, y0 + x, color);
-        ILI9341_DrawPixel(x0 + y, y0 - x, color);
-        ILI9341_DrawPixel(x0 - y, y0 - x, color);
+        ILI9341_DrawPixelFast(x0 + x, y0 + y, color);
+        ILI9341_DrawPixelFast(x0 - x, y0 + y, color);
+        ILI9341_DrawPixelFast(x0 + x, y0 - y, color);
+        ILI9341_DrawPixelFast(x0 - x, y0 - y, color);
+        ILI9341_DrawPixelFast(x0 + y, y0 + x, color);
+        ILI9341_DrawPixelFast(x0 - y, y0 + x, color);
+        ILI9341_DrawPixelFast(x0 + y, y0 - x, color);
+        ILI9341_DrawPixelFast(x0 - y, y0 - x, color);
     }
+
+    ILI9341_Unselect();
 }
 
 void ILI9341_FillCircle(uint16_t x0, uint16_t y0, uint16_t r, uint16_t color) {
     if ((x0 - r) >= ILI9341_WIDTH || (x0 + r) >= ILI9341_WIDTH || (y0 - r) >= ILI9341_HEIGHT || (y0 + r) >= ILI9341_HEIGHT)
         return;
 
+    ILI9341_Select();
+
     for (uint16_t x = 0; x <= r; x++) {
         for (uint16_t y = 0; y <= r; y++) {
             if (x * x + y * y <= r * r) {
-                ILI9341_DrawPixel(x0 + x, y0 + y, color);
-                ILI9341_DrawPixel(x0 - x, y0 + y, color);
-                ILI9341_DrawPixel(x0 + x, y0 - y, color);
-                ILI9341_DrawPixel(x0 - x, y0 - y, color);
+                ILI9341_DrawPixelFast(x0 + x, y0 + y, color);
+                ILI9341_DrawPixelFast(x0 - x, y0 + y, color);
+                ILI9341_DrawPixelFast(x0 + x, y0 - y, color);
+                ILI9341_DrawPixelFast(x0 - x, y0 - y, color);
             }
         }
     }
+
+    ILI9341_Unselect();
 }
