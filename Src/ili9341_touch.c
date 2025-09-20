@@ -1,7 +1,8 @@
 /* vim: set ai et ts=4 sw=4: */
 
-#include "stm32f4xx_hal.h"
 #include "ili9341_touch.h"
+
+#include "stm32f7xx_hal.h"
 
 #define READ_X 0xD0
 #define READ_Y 0x90
@@ -19,17 +20,17 @@ bool ILI9341_TouchPressed() {
 }
 
 bool ILI9341_TouchGetCoordinates(uint16_t* x, uint16_t* y) {
-    static const uint8_t cmd_read_x[] = { READ_X };
-    static const uint8_t cmd_read_y[] = { READ_Y };
-    static const uint8_t zeroes_tx[] = { 0x00, 0x00 };
+    static const uint8_t cmd_read_x[] = {READ_X};
+    static const uint8_t cmd_read_y[] = {READ_Y};
+    static const uint8_t zeroes_tx[] = {0x00, 0x00};
 
     ILI9341_TouchSelect();
 
     uint32_t avg_x = 0;
     uint32_t avg_y = 0;
     uint8_t nsamples = 0;
-    for(uint8_t i = 0; i < 16; i++) {
-        if(!ILI9341_TouchPressed())
+    for (uint8_t i = 0; i < 16; i++) {
+        if (!ILI9341_TouchPressed())
             break;
 
         nsamples++;
@@ -48,16 +49,16 @@ bool ILI9341_TouchGetCoordinates(uint16_t* x, uint16_t* y) {
 
     ILI9341_TouchUnselect();
 
-    if(nsamples < 16)
+    if (nsamples < 16)
         return false;
 
     uint32_t raw_x = (avg_x / 16);
-    if(raw_x < ILI9341_TOUCH_MIN_RAW_X) raw_x = ILI9341_TOUCH_MIN_RAW_X;
-    if(raw_x > ILI9341_TOUCH_MAX_RAW_X) raw_x = ILI9341_TOUCH_MAX_RAW_X;
+    if (raw_x < ILI9341_TOUCH_MIN_RAW_X) raw_x = ILI9341_TOUCH_MIN_RAW_X;
+    if (raw_x > ILI9341_TOUCH_MAX_RAW_X) raw_x = ILI9341_TOUCH_MAX_RAW_X;
 
     uint32_t raw_y = (avg_y / 16);
-    if(raw_y < ILI9341_TOUCH_MIN_RAW_Y) raw_y = ILI9341_TOUCH_MIN_RAW_Y;
-    if(raw_y > ILI9341_TOUCH_MAX_RAW_Y) raw_y = ILI9341_TOUCH_MAX_RAW_Y;
+    if (raw_y < ILI9341_TOUCH_MIN_RAW_Y) raw_y = ILI9341_TOUCH_MIN_RAW_Y;
+    if (raw_y > ILI9341_TOUCH_MAX_RAW_Y) raw_y = ILI9341_TOUCH_MAX_RAW_Y;
 
     // Uncomment this line to calibrate touchscreen:
     // UART_Printf("raw_x = %d, raw_y = %d\r\n", x, y);
