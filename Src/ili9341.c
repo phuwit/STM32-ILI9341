@@ -245,7 +245,7 @@ static void ILI9341_WriteChar(uint16_t x, uint16_t y, char ch, ILI9341_FontDef f
         mask >>= 1;
         if (mask == 0) {
             index++;
-            mask = 0x80000000
+            mask = 0x80000000;
         }
     }
 }
@@ -259,6 +259,40 @@ void ILI9341_WriteString(uint16_t x, uint16_t y, const char* str, ILI9341_FontDe
     while (*str && x + font.width - 1 < ILI9341_WIDTH) {
         ILI9341_WriteChar(x, y, *str, font, color, bgcolor);
         x += font.width;
+        str++;
+    }
+
+    ILI9341_Deselect();
+}
+
+static void ILI9341_WriteCharScaled(uint16_t x, uint16_t y, char ch, ILI9341_FontDef font, uint16_t color, uint16_t bgcolor, uint32_t scale) {
+    if (ch < 32 || ch > 127)
+        return;
+
+    ILI9341_SetAddressWindow(x, y, x + font.width * scale - 1, y + font.height * scale - 1);
+
+    for (uint32_t i = 0; i < font.width * font.height * scale * scale; i++) {
+        uint32_t index = (ch - 32) * font.intsPerGlyph + ((i / (font.width * scale * scale) * font.width) + ((i % (font.width * scale)) / scale)) / 32;
+        uint32_t mask = 0x80000000 >> (((i / (font.width * scale * scale) * font.width) + ((i % (font.width * scale)) / scale)) % 32);
+        if (font.data[index] & mask) {
+            uint8_t data[] = {color >> 8, color & 0xFF};
+            ILI9341_WriteData(data, sizeof(data));
+        } else {
+            uint8_t data[] = {bgcolor >> 8, bgcolor & 0xFF};
+            ILI9341_WriteData(data, sizeof(data));
+        }
+    }
+}
+
+void ILI9341_WriteStringScaled(uint16_t x, uint16_t y, const char* str, ILI9341_FontDef font, uint16_t color, uint16_t bgcolor, uint32_t scale) {
+    if (y + font.height * scale - 1 > ILI9341_HEIGHT)
+        return;
+
+    ILI9341_Select();
+
+    while (*str && x + font.width * scale - 1 < ILI9341_WIDTH) {
+        ILI9341_WriteCharScaled(x, y, *str, font, color, bgcolor, scale);
+        x += font.width * scale;
         str++;
     }
 
@@ -280,7 +314,7 @@ static void ILI9341_WriteCharTransparent(uint16_t x, uint16_t y, char ch, ILI934
             mask >>= 1;
             if (mask == 0) {
                 index++;
-                mask = 0x80000000
+                mask = 0x80000000;
             }
         }
     }
@@ -295,6 +329,42 @@ void ILI9341_WriteStringTransparent(uint16_t x, uint16_t y, const char* str, ILI
     while (*str && x + font.width - 1 < ILI9341_WIDTH) {
         ILI9341_WriteCharTransparent(x, y, *str, font, color);
         x += font.width;
+        str++;
+    }
+
+    ILI9341_Deselect();
+}
+
+static void ILI9341_WriteCharTransparentScaled(uint16_t x, uint16_t y, char ch, ILI9341_FontDef font, uint16_t color, uint32_t scale) {
+    if (ch < 32 || ch > 127)
+        return;
+
+    uint32_t index = (ch - 32) * font.intsPerGlyph;
+    uint32_t mask = 0x80000000;
+
+    for (uint32_t row = 0; row < font.height; row++) {
+        for (uint32_t col = 0; col < font.width; col++) {
+            if (font.data[index] & mask) {
+                ILI9341_FillRectangleFast(x + col * scale, y + row * scale, scale, scale, color);
+            }
+            mask >>= 1;
+            if (mask == 0) {
+                index++;
+                mask = 0x80000000;
+            }
+        }
+    }
+}
+
+void ILI9341_WriteStringTransparentScaled(uint16_t x, uint16_t y, const char* str, ILI9341_FontDef font, uint16_t color, uint32_t scale) {
+    if (y + font.height * scale - 1 > ILI9341_HEIGHT)
+        return;
+
+    ILI9341_Select();
+
+    while (*str && x + font.width * scale - 1 < ILI9341_WIDTH) {
+        ILI9341_WriteCharTransparentScaled(x, y, *str, font, color, scale);
+        x += font.width * scale;
         str++;
     }
 
