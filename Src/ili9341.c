@@ -2,12 +2,14 @@
 #include "ili9341.h"
 
 #include "stm32f7xx_hal.h"
+#include "stm32f7xx_hal_gpio.h"
+#include "stm32f7xx_hal_spi.h"
 
 static void ILI9341_Select() {
     HAL_GPIO_WritePin(ILI9341_CS_GPIO_Port, ILI9341_CS_Pin, GPIO_PIN_RESET);
 }
 
-void ILI9341_Unselect() {
+void ILI9341_Deselect() {
     HAL_GPIO_WritePin(ILI9341_CS_GPIO_Port, ILI9341_CS_Pin, GPIO_PIN_SET);
 }
 
@@ -205,24 +207,22 @@ void ILI9341_Init() {
         ILI9341_WriteData(data, sizeof(data));
     }
 
-    ILI9341_Unselect();
+    ILI9341_Deselect();
 }
 
-static void ILI9341_DrawPixelFast(uint16_t x, uint16_t y, uint16_t color) {
+static void ILI9341_DrawPixelFast(int16_t x, int16_t y, uint16_t color) {
+    if (x < 0 || y < 0 || x >= ILI9341_WIDTH || y >= ILI9341_HEIGHT)
+        return;
+
     ILI9341_SetAddressWindow(x, y, x + 1, y + 1);
     uint8_t data[] = {color >> 8, color & 0xFF};
     ILI9341_WriteData(data, sizeof(data));
 }
 
-void ILI9341_DrawPixel(uint16_t x, uint16_t y, uint16_t color) {
-    if ((x >= ILI9341_WIDTH) || (y >= ILI9341_HEIGHT))
-        return;
-
+void ILI9341_DrawPixel(int16_t x, int16_t y, uint16_t color) {
     ILI9341_Select();
-
     ILI9341_DrawPixelFast(x, y, color);
-
-    ILI9341_Unselect();
+    ILI9341_Deselect();
 }
 
 static void ILI9341_WriteChar(uint16_t x, uint16_t y, char ch, FontDef font, uint16_t color, uint16_t bgcolor) {
@@ -267,10 +267,35 @@ void ILI9341_WriteString(uint16_t x, uint16_t y, const char* str, FontDef font, 
         str++;
     }
 
-    ILI9341_Unselect();
+    ILI9341_Deselect();
 }
 
-static void ILI9341_FillRectangleFast(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color) {
+static void ILI9341_FillRectangleFast(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color) {
+    if (w < 0) {
+        w = -w;
+        x -= w - 1;
+    }
+
+    if (h < 0) {
+        h = -h;
+        y -= h - 1;
+    }
+
+    if (x >= ILI9341_WIDTH || y >= ILI9341_HEIGHT || w == 0 || h == 0) return;
+
+    if (x < 0) {
+        w += x;
+        x = 0;
+    }
+
+    if (y < 0) {
+        h += y;
+        y = 0;
+    }
+
+    if ((x + w - 1) >= ILI9341_WIDTH) w = ILI9341_WIDTH - x;
+    if ((y + h - 1) >= ILI9341_HEIGHT) h = ILI9341_HEIGHT - y;
+
     ILI9341_SetAddressWindow(x, y, x + w - 1, y + h - 1);
 
     uint8_t data[] = {color >> 8, color & 0xFF};
@@ -282,59 +307,39 @@ static void ILI9341_FillRectangleFast(uint16_t x, uint16_t y, uint16_t w, uint16
     }
 }
 
-void ILI9341_FillRectangle(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color) {
-    // clipping
-    if ((x >= ILI9341_WIDTH) || (y >= ILI9341_HEIGHT)) return;
-    if ((x + w - 1) >= ILI9341_WIDTH) w = ILI9341_WIDTH - x;
-    if ((y + h - 1) >= ILI9341_HEIGHT) h = ILI9341_HEIGHT - y;
-
+void ILI9341_FillRectangle(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color) {
     ILI9341_Select();
-
     ILI9341_FillRectangleFast(x, y, w, h, color);
-
-    ILI9341_Unselect();
+    ILI9341_Deselect();
 }
 
 void ILI9341_FillScreen(uint16_t color) {
-    ILI9341_FillRectangle(0, 0, ILI9341_WIDTH, ILI9341_HEIGHT, color);
+    ILI9341_Select();
+    ILI9341_FillRectangleFast(0, 0, ILI9341_WIDTH, ILI9341_HEIGHT, color);
+    ILI9341_Deselect();
 }
 
 void ILI9341_DrawImage(uint16_t x, uint16_t y, uint16_t w, uint16_t h, const uint16_t* data) {
-    if ((x >= ILI9341_WIDTH) || (y >= ILI9341_HEIGHT) || ((x + w - 1) >= ILI9341_WIDTH) || ((y + h - 1) >= ILI9341_HEIGHT))) return;
+    if (x >= ILI9341_WIDTH || y >= ILI9341_HEIGHT || (x + w - 1) >= ILI9341_WIDTH || (y + h - 1) >= ILI9341_HEIGHT) return;
 
     ILI9341_Select();
     ILI9341_SetAddressWindow(x, y, x + w - 1, y + h - 1);
     ILI9341_WriteData((uint8_t*)data, sizeof(uint16_t) * w * h);
-    ILI9341_Unselect();
+    ILI9341_Deselect();
 }
 
 void ILI9341_InvertColors(bool invert) {
     ILI9341_Select();
     ILI9341_WriteCommand(invert ? 0x21 /* INVON */ : 0x20 /* INVOFF */);
-    ILI9341_Unselect();
+    ILI9341_Deselect();
 }
 
-void ILI9341_DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color) {
-    if ((x1 >= ILI9341_WIDTH) || (y1 >= ILI9341_HEIGHT) || (x2 >= ILI9341_WIDTH) || (y2 >= ILI9341_HEIGHT))
-        return;
-
+static void ILI9341_DrawLineFast(int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color) {
     if (x1 == x2) {
-        // vertical line
-        if (y1 > y2) {
-            uint16_t tmp = y1;
-            y1 = y2;
-            y2 = tmp;
-        }
-        ILI9341_FillRectangle(x1, y1, 1, y2 - y1 + 1, color);
+        ILI9341_FillRectangleFast(x1, y1, 1, y2 - y1 + 1, color);
         return;
     } else if (y1 == y2) {
-        // horizontal line
-        if (x1 > x2) {
-            uint16_t tmp = x1;
-            x1 = x2;
-            x2 = tmp;
-        }
-        ILI9341_FillRectangle(x1, y1, x2 - x1 + 1, 1, color);
+        ILI9341_FillRectangleFast(x1, y1, x2 - x1 + 1, 1, color);
         return;
     }
 
@@ -342,9 +347,7 @@ void ILI9341_DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16
     int16_t dy = -abs(y2 - y1), sy = y1 < y2 ? 1 : -1;
     int16_t err = dx + dy, e2; /* error value e_xy */
 
-    ILI9341_Select();
-
-    for (;;) { /* loop */
+    while (true) {
         ILI9341_DrawPixelFast(x1, y1, color);
         if (x1 == x2 && y1 == y2) break;
         e2 = 2 * err;
@@ -357,27 +360,91 @@ void ILI9341_DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16
             y1 += sy;
         }
     }
-
-    ILI9341_Unselect();
 }
 
-void ILI9341_DrawRectangle(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color) {
-    if ((x >= ILI9341_WIDTH) || (y >= ILI9341_HEIGHT) || ((x + w - 1) >= ILI9341_WIDTH) || ((y + h - 1) >= ILI9341_HEIGHT)) return;
+void ILI9341_DrawLine(int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color) {
+    ILI9341_Select();
+    ILI9341_DrawLineFast(x1, y1, x2, y2, color);
+    ILI9341_Deselect();
+}
+
+void ILI9341_DrawLineThick(int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color, uint16_t thickness, bool cap) {
+    if (thickness == 0) return;
+    if (thickness == 1) {
+        ILI9341_DrawLine(x1, y1, x2, y2, color);
+        return;
+    }
+
+    if (x1 > x2) {
+        int16_t tmp = x1;
+        x1 = x2;
+        x2 = tmp;
+    }
+
+    if (y1 > y2) {
+        int16_t tmp = y1;
+        y1 = y2;
+        y2 = tmp;
+    }
+
+    if (x1 >= ILI9341_WIDTH || y1 >= ILI9341_HEIGHT || x2 < 0 || y2 < 0)
+        return;
+
+    // calculate line vector
+    int16_t dx = x2 - x1;
+    int16_t dy = y2 - y1;
+    float length = sqrtf(dx * dx + dy * dy);
+    if (length == 0) return;  // zero-length line
+
+    // unit vector
+    float ux = dx / length;
+    float uy = dy / length;
+
+    // perpendicular vector
+    float px = -uy;
+    float py = ux;
+
+    // half thickness
+    float half_thickness = thickness / 2.0f;
+
+    // calculate corner points
+    int16_t corners_x[4] = {
+        (int16_t)(x1 + px * half_thickness),
+        (int16_t)(x1 - px * half_thickness),
+        (int16_t)(x2 - px * half_thickness),
+        (int16_t)(x2 + px * half_thickness)};
+    int16_t corners_y[4] = {
+        (int16_t)(y1 + py * half_thickness),
+        (int16_t)(y1 - py * half_thickness),
+        (int16_t)(y2 - py * half_thickness),
+        (int16_t)(y2 + py * half_thickness)};
+
+    ILI9341_FillPolygon(corners_x, corners_y, 4, color);
+
+    if (cap) {
+        ILI9341_FillCircle(x1, y1, half_thickness, color);
+        ILI9341_FillCircle(x2, y2, half_thickness, color);
+    }
+}
+
+void ILI9341_DrawRectangle(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color) {
+    ILI9341_DrawRectangleThick(x, y, w, h, color, 1);
+}
+
+void ILI9341_DrawRectangleThick(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color, uint16_t thickness) {
+    if (thickness == 0) return;
 
     ILI9341_Select();
 
-    ILI9341_FillRectangleFast(x, y, w, 1, color);
-    ILI9341_FillRectangleFast(x, y + h - 1, w, 1, color);
-    ILI9341_FillRectangleFast(x, y, 1, h, color);
-    ILI9341_FillRectangleFast(x + w - 1, y, 1, h, color);
+    ILI9341_FillRectangleFast(x, y, w, thickness, color);                                              // top
+    ILI9341_FillRectangleFast(x, y + h - thickness, w, thickness, color);                              // bottom
+    ILI9341_FillRectangleFast(x, y + thickness, thickness, h - 2 * thickness, color);                  // left
+    ILI9341_FillRectangleFast(x + w - thickness, y + thickness, thickness, h - 2 * thickness, color);  // right
 
-    ILI9341_Unselect();
+    ILI9341_Deselect();
 }
 
-void ILI9341_DrawCircle(uint16_t x0, uint16_t y0, uint16_t r, uint16_t color) {
-    if ((x0 - r) >= ILI9341_WIDTH || (x0 + r) >= ILI9341_WIDTH || (y0 - r) >= ILI9341_HEIGHT || (y0 + r) >= ILI9341_HEIGHT)
-        return;
-
+void ILI9341_DrawCircle(int16_t xc, int16_t yc, uint16_t r, uint16_t color) {
     int16_t f = 1 - r;
     int16_t ddF_x = 1;
     int16_t ddF_y = -2 * r;
@@ -386,10 +453,10 @@ void ILI9341_DrawCircle(uint16_t x0, uint16_t y0, uint16_t r, uint16_t color) {
 
     ILI9341_Select();
 
-    ILI9341_DrawPixelFast(x0, y0 + r, color);
-    ILI9341_DrawPixelFast(x0, y0 - r, color);
-    ILI9341_DrawPixelFast(x0 + r, y0, color);
-    ILI9341_DrawPixelFast(x0 - r, y0, color);
+    ILI9341_DrawPixelFast(xc, yc + r, color);
+    ILI9341_DrawPixelFast(xc, yc - r, color);
+    ILI9341_DrawPixelFast(xc + r, yc, color);
+    ILI9341_DrawPixelFast(xc - r, yc, color);
 
     while (x < y) {
         if (f >= 0) {
@@ -401,35 +468,162 @@ void ILI9341_DrawCircle(uint16_t x0, uint16_t y0, uint16_t r, uint16_t color) {
         ddF_x += 2;
         f += ddF_x;
 
-        ILI9341_DrawPixelFast(x0 + x, y0 + y, color);
-        ILI9341_DrawPixelFast(x0 - x, y0 + y, color);
-        ILI9341_DrawPixelFast(x0 + x, y0 - y, color);
-        ILI9341_DrawPixelFast(x0 - x, y0 - y, color);
-        ILI9341_DrawPixelFast(x0 + y, y0 + x, color);
-        ILI9341_DrawPixelFast(x0 - y, y0 + x, color);
-        ILI9341_DrawPixelFast(x0 + y, y0 - x, color);
-        ILI9341_DrawPixelFast(x0 - y, y0 - x, color);
+        ILI9341_DrawPixelFast(xc + x, yc + y, color);
+        ILI9341_DrawPixelFast(xc - x, yc + y, color);
+        ILI9341_DrawPixelFast(xc + x, yc - y, color);
+        ILI9341_DrawPixelFast(xc - x, yc - y, color);
+        ILI9341_DrawPixelFast(xc + y, yc + x, color);
+        ILI9341_DrawPixelFast(xc - y, yc + x, color);
+        ILI9341_DrawPixelFast(xc + y, yc - x, color);
+        ILI9341_DrawPixelFast(xc - y, yc - x, color);
     }
 
-    ILI9341_Unselect();
+    ILI9341_Deselect();
 }
 
-void ILI9341_FillCircle(uint16_t x0, uint16_t y0, uint16_t r, uint16_t color) {
-    if ((x0 - r) >= ILI9341_WIDTH || (x0 + r) >= ILI9341_WIDTH || (y0 - r) >= ILI9341_HEIGHT || (y0 + r) >= ILI9341_HEIGHT)
-        return;
+void ILI9341_DrawCircleThick(int16_t xc, int16_t yc, uint16_t r, uint16_t color, uint16_t thickness) {
+    if (thickness == 0 || thickness > r) return;
+
+    int16_t ri = r - thickness;
+    int16_t xo = r;
+    int16_t xi = ri;
+    int16_t y = 0;
+    int16_t erro = 1 - xo;
+    int16_t erri = 1 - xi;
 
     ILI9341_Select();
 
-    for (uint16_t x = 0; x <= r; x++) {
-        for (uint16_t y = 0; y <= r; y++) {
-            if (x * x + y * y <= r * r) {
-                ILI9341_DrawPixelFast(x0 + x, y0 + y, color);
-                ILI9341_DrawPixelFast(x0 - x, y0 + y, color);
-                ILI9341_DrawPixelFast(x0 + x, y0 - y, color);
-                ILI9341_DrawPixelFast(x0 - x, y0 - y, color);
+    while (xo >= y) {
+        ILI9341_DrawLineFast(xc + xi, xc + xo, yc + y, yc + y, color);
+        ILI9341_DrawLineFast(xc + y, xc + y, yc + xi, yc + xo, color);
+        ILI9341_DrawLineFast(xc - xo, xc - xi, yc + y, yc + y, color);
+        ILI9341_DrawLineFast(xc - y, xc - y, yc + xi, yc + xo, color);
+        ILI9341_DrawLineFast(xc - xo, xc - xi, yc - y, yc - y, color);
+        ILI9341_DrawLineFast(xc - y, xc - y, yc - xo, yc - xi, color);
+        ILI9341_DrawLineFast(xc + xi, xc + xo, yc - y, yc - y, color);
+        ILI9341_DrawLineFast(xc + y, xc + y, yc - xo, yc - xi, color);
+
+        y++;
+
+        if (erro < 0) {
+            erro += 2 * y + 1;
+        } else {
+            xo--;
+            erro += 2 * (y - xo + 1);
+        }
+
+        if (y > ri) {
+            xi = y;
+        } else {
+            if (erri < 0) {
+                erri += 2 * y + 1;
+            } else {
+                xi--;
+                erri += 2 * (y - xi + 1);
             }
         }
     }
 
-    ILI9341_Unselect();
+    ILI9341_Deselect();
+}
+
+void ILI9341_FillCircle(int16_t xc, int16_t yc, uint16_t r, uint16_t color) {
+    int16_t x = 0;
+
+    ILI9341_Select();
+
+    for (int16_t y = 0; y <= r; y++) {
+        while (x * x + y * y <= r * r) {
+            x++;
+        }
+        x--;
+        ILI9341_DrawLineFast(xc - x, yc + y, xc + x, yc + y, color);
+        ILI9341_DrawLineFast(xc - x, yc - y, xc + x, yc - y, color);
+    }
+
+    ILI9341_Deselect();
+}
+
+void ILI9341_DrawPolygon(int16_t* x, int16_t* y, uint16_t n, uint16_t color) {
+    if (n < 2) return;
+
+    ILI9341_Select();
+
+    for (uint16_t i = 0; i < n - 1; i++) {
+        ILI9341_DrawLineFast(x[i], y[i], x[i + 1], y[i + 1], color);
+    }
+    ILI9341_DrawLineFast(x[n - 1], y[n - 1], x[0], y[0], color);
+
+    ILI9341_Deselect();
+}
+
+void ILI9341_DrawPolygonThick(int16_t* x, int16_t* y, uint16_t n, uint16_t color, uint16_t thickness, bool cap) {
+    if (n < 2 || thickness == 0) return;
+
+    for (uint16_t i = 0; i < n - 1; i++) {
+        ILI9341_DrawLineThick(x[i], y[i], x[i + 1], y[i + 1], color, thickness, cap);
+    }
+    ILI9341_DrawLineThick(x[n - 1], y[n - 1], x[0], y[0], color, thickness, cap);
+}
+
+void ILI9341_FillPolygon(int16_t* x, int16_t* y, uint16_t n, uint16_t color) {
+    if (n < 3) return;
+
+    // find max and min Y
+    int16_t minY = y[0], maxY = y[0];
+    for (uint16_t i = 1; i < n; i++) {
+        if (y[i] < minY) minY = y[i];
+        if (y[i] > maxY) maxY = y[i];
+    }
+
+    if (minY >= ILI9341_HEIGHT) return;
+    if (maxY < 0) return;
+    if (minY < 0) minY = 0;
+    if (maxY >= ILI9341_HEIGHT) maxY = ILI9341_HEIGHT - 1;
+
+    int16_t nodeX[32];  // max 32 intersections
+
+    ILI9341_Select();
+
+    // scanline algorithm
+    for (uint16_t j = minY; j <= maxY; j++) {
+        uint16_t nodes = 0;
+        uint16_t k = n - 1;
+
+        // find intersections
+        for (uint16_t i = 0; i < n; i++) {
+            if ((y[i] < j && y[k] >= j) || (y[k] < j && y[i] >= j)) {
+                int16_t dy = y[k] - y[i];
+                if (dy != 0 && nodes < 32) {
+                    nodeX[nodes++] = x[i] + ((int32_t)(j - y[i]) * (x[k] - x[i])) / dy;
+                }
+            }
+            k = i;
+        }
+
+        // insertion sort nodeX array
+        for (uint16_t i = 1; i < nodes; i++) {
+            int16_t key = nodeX[i];
+            int16_t j_sort = i - 1;
+            while (j_sort >= 0 && nodeX[j_sort] > key) {
+                nodeX[j_sort + 1] = nodeX[j_sort];
+                j_sort--;
+            }
+            nodeX[j_sort + 1] = key;
+        }
+
+        // fill the pixels between node pairs
+        for (uint16_t i = 0; i < nodes - 1; i += 2) {
+            int16_t x1 = nodeX[i];
+            int16_t x2 = nodeX[i + 1];
+
+            if (x1 >= ILI9341_WIDTH) break;
+            if (x2 >= ILI9341_WIDTH) x2 = ILI9341_WIDTH - 1;
+            if (x1 < ILI9341_WIDTH && x2 > 0 && x2 >= x1) {
+                ILI9341_FillRectangleFast(x1, j, x2 - x1 + 1, 1, color);
+            }
+        }
+    }
+
+    ILI9341_Deselect();
 }

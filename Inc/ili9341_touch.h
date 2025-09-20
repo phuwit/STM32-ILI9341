@@ -2,13 +2,13 @@
 #ifndef __ILI9341_TOUCH_H__
 #define __ILI9341_TOUCH_H__
 
-#include <stdbool.h>
+#include "stdbool.h"
 
 /*** Redefine if necessary ***/
 
 // Warning! Use SPI bus with < 1.3 Mbit speed, better ~650 Kbit to be save.
-#define ILI9341_TOUCH_SPI_PORT hspi2
-extern SPI_HandleTypeDef ILI9341_TOUCH_SPI_PORT;
+#define ILI9341_TOUCH_SPI_HANDLE hspi2
+extern SPI_HandleTypeDef ILI9341_TOUCH_SPI_HANDLE;
 
 #define ILI9341_TOUCH_CS_GPIO_Port GPIOE
 #define ILI9341_TOUCH_CS_Pin GPIO_PIN_6
@@ -27,7 +27,7 @@ extern SPI_HandleTypeDef ILI9341_TOUCH_SPI_PORT;
 #define ILI9341_TOUCH_MAX_RAW_Y 30110
 
 // call before initializing any SPI devices
-void ILI9341_TouchUnselect();
+void ILI9341_TouchDeselect();
 
 bool ILI9341_TouchPressed();
 bool ILI9341_TouchGetCoordinates(uint16_t* x, uint16_t* y);

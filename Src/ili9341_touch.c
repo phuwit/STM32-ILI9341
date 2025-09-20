@@ -3,6 +3,8 @@
 #include "ili9341_touch.h"
 
 #include "stm32f7xx_hal.h"
+#include "stm32f7xx_hal_gpio.h"
+#include "stm32f7xx_hal_spi.h"
 
 #define READ_X 0xD0
 #define READ_Y 0x90
@@ -11,7 +13,7 @@ static void ILI9341_TouchSelect() {
     HAL_GPIO_WritePin(ILI9341_TOUCH_CS_GPIO_Port, ILI9341_TOUCH_CS_Pin, GPIO_PIN_RESET);
 }
 
-void ILI9341_TouchUnselect() {
+void ILI9341_TouchDeselect() {
     HAL_GPIO_WritePin(ILI9341_TOUCH_CS_GPIO_Port, ILI9341_TOUCH_CS_Pin, GPIO_PIN_SET);
 }
 
@@ -47,7 +49,7 @@ bool ILI9341_TouchGetCoordinates(uint16_t* x, uint16_t* y) {
         avg_y += (((uint16_t)y_raw[0]) << 8) | ((uint16_t)y_raw[1]);
     }
 
-    ILI9341_TouchUnselect();
+    ILI9341_TouchDeselect();
 
     if (nsamples < 16)
         return false;

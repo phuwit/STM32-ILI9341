@@ -2,9 +2,9 @@
 #ifndef __ILI9341_H__
 #define __ILI9341_H__
 
-#include <stdbool.h>
-
 #include "fonts.h"
+#include "math.h"
+#include "stdbool.h"
 
 #define ILI9341_MADCTL_MY 0x80
 #define ILI9341_MADCTL_MX 0x40
@@ -15,8 +15,8 @@
 #define ILI9341_MADCTL_MH 0x04
 
 /*** Redefine if necessary ***/
-#define ILI9341_SPI_PORT hspi1
-extern SPI_HandleTypeDef ILI9341_SPI_PORT;
+#define ILI9341_SPI_HANDLE hspi1
+extern SPI_HandleTypeDef ILI9341_SPI_HANDLE;
 
 #define ILI9341_CS_GPIO_Port GPIOC
 #define ILI9341_CS_Pin GPIO_PIN_8
@@ -62,19 +62,25 @@ extern SPI_HandleTypeDef ILI9341_SPI_PORT;
 #define ILI9341_COLOR565(r, g, b) (((r & 0xF8) << 8) | ((g & 0xFC) << 3) | ((b & 0xF8) >> 3))
 
 // call before initializing any SPI devices
-void ILI9341_Unselect();
+void ILI9341_Deselect();
 
 void ILI9341_Init(void);
-void ILI9341_DrawPixel(uint16_t x, uint16_t y, uint16_t color);
+void ILI9341_DrawPixel(int16_t x, int16_t y, uint16_t color);
 void ILI9341_WriteString(uint16_t x, uint16_t y, const char* str, FontDef font, uint16_t color, uint16_t bgcolor);
-void ILI9341_FillRectangle(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color);
+void ILI9341_FillRectangle(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
 void ILI9341_FillScreen(uint16_t color);
 void ILI9341_DrawImage(uint16_t x, uint16_t y, uint16_t w, uint16_t h, const uint16_t* data);
 void ILI9341_InvertColors(bool invert);
 
-void ILI9341_DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color);
-void ILI9341_DrawRectangle(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color);
-void ILI9341_DrawCircle(uint16_t x, uint16_t y, uint16_t r, uint16_t color);
-void ILI9341_FillCircle(uint16_t x, uint16_t y, uint16_t r, uint16_t color);
+void ILI9341_DrawLine(int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color);
+void ILI9341_DrawLineThick(int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color, uint16_t thickness, bool cap);
+void ILI9341_DrawRectangle(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
+void ILI9341_DrawRectangleThick(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color, uint16_t thickness);
+void ILI9341_DrawCircle(int16_t x, int16_t y, uint16_t r, uint16_t color);
+void ILI9341_DrawCircleThick(int16_t x0, int16_t y0, uint16_t r, uint16_t color, uint16_t thickness);
+void ILI9341_FillCircle(int16_t x, int16_t y, uint16_t r, uint16_t color);
+void ILI9341_DrawPolygon(int16_t* x, int16_t* y, uint16_t n, uint16_t color);
+void ILI9341_DrawPolygonThick(int16_t* x, int16_t* y, uint16_t n, uint16_t color, uint16_t thickness, bool cap);
+void ILI9341_FillPolygon(int16_t* x, int16_t* y, uint16_t n, uint16_t color);
 
 #endif  // __ILI9341_H__
