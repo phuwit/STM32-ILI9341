@@ -20,15 +20,6 @@ See also:
 [u2]: https://github.com/afiskon/stm32-ssd1306
 [u3]: https://github.com/martnak/STM32-ILI9341
 
-## Additional features
+## Documentations
 
-This fork add 4 functions to the original library from [afiskon/stm32-ili9341][u0], they're the following:
-
-1. `ILI9341_DrawLine`: draw a line from x1, y1 to x2, y2 using Bresenham's line algorithm
-2. `ILI9341_DrawRectangle`: draw a hollow rectangle at x, y with w, h widht and height
-3. `ILI9341_DrawCircle`: draw a hollow circle using Bresenham’s circle algorithm
-4. `ILI9341_FillCircle`: draw a filled circle using generic x^2 + y^x <= r^2 algorithm
-
-## Configuration
-
-To specify hardware SPI handler and GPIO pins, edit the definitions in [Inc/ili9341.h](./Inc/ili9341.h) and [Inc/ili9341_touch.h](./Inc/ili9341_touch.h). The SPI speed can be up to 50 Mbps for the LCD, and 1.3 Mbps for the touch screen. All GPIOs used should be set to very high (maximum) output frequency.
+There's currently no documentation, the best way to know how to use this library is to read the source code. The documentation will come at a later time.
