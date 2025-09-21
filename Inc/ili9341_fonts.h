@@ -5,9 +5,9 @@
 #include "stdint.h"
 
 typedef struct {
-    const uint32_t width;
-    const uint32_t height;
-    const uint32_t intsPerGlyph;
+    const uint16_t width;
+    const uint16_t height;
+    const uint16_t intsPerGlyph;
     const uint32_t* data;
 } ILI9341_FontDef;
 

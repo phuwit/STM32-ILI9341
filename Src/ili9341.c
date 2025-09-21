@@ -339,7 +339,7 @@ static void ILI9341_WriteChar(ILI9341_HandleTypeDef* ili9341, uint16_t x, uint16
 }
 
 void ILI9341_WriteString(ILI9341_HandleTypeDef* ili9341, uint16_t x, uint16_t y, const char* str, ILI9341_FontDef font,
-                         uint16_t color, uint16_t bgcolor, uint16_t tracking) {
+                         uint16_t color, uint16_t bgcolor, int16_t tracking) {
     if (y + font.height - 1 > ili9341->height) return;
 
     ILI9341_Select(ili9341);
@@ -376,7 +376,7 @@ static void ILI9341_WriteCharScaled(ILI9341_HandleTypeDef* ili9341, uint16_t x, 
 
 void ILI9341_WriteStringScaled(ILI9341_HandleTypeDef* ili9341, uint16_t x, uint16_t y, const char* str,
                                ILI9341_FontDef font, uint16_t color, uint16_t bgcolor, uint16_t scale,
-                               uint16_t tracking) {
+                               int16_t tracking) {
     if (y + font.height * scale - 1 > ili9341->height) return;
 
     ILI9341_Select(ili9341);
@@ -410,7 +410,7 @@ static void ILI9341_WriteCharTransparent(ILI9341_HandleTypeDef* ili9341, uint16_
 }
 
 void ILI9341_WriteStringTransparent(ILI9341_HandleTypeDef* ili9341, uint16_t x, uint16_t y, const char* str,
-                                    ILI9341_FontDef font, uint16_t color, uint16_t tracking) {
+                                    ILI9341_FontDef font, uint16_t color, int16_t tracking) {
     if (y + font.height - 1 > ili9341->height) return;
 
     ILI9341_Select(ili9341);
@@ -446,7 +446,7 @@ static void ILI9341_WriteCharTransparentScaled(ILI9341_HandleTypeDef* ili9341, u
 }
 
 void ILI9341_WriteStringTransparentScaled(ILI9341_HandleTypeDef* ili9341, uint16_t x, uint16_t y, const char* str,
-                                          ILI9341_FontDef font, uint16_t color, uint16_t scale, uint16_t tracking) {
+                                          ILI9341_FontDef font, uint16_t color, uint16_t scale, int16_t tracking) {
     if (y + font.height * scale - 1 > ili9341->height) return;
 
     ILI9341_Select(ili9341);

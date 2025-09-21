@@ -68,14 +68,14 @@ void ILI9341_DrawPixel(ILI9341_HandleTypeDef* ili9341, int16_t x, int16_t y, uin
 void ILI9341_FillRectangle(ILI9341_HandleTypeDef* ili9341, int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
 void ILI9341_FillScreen(ILI9341_HandleTypeDef* ili9341, uint16_t color);
 void ILI9341_WriteString(ILI9341_HandleTypeDef* ili9341, uint16_t x, uint16_t y, const char* str, ILI9341_FontDef font,
-                         uint16_t color, uint16_t bgcolor, uint16_t tracking);
+                         uint16_t color, uint16_t bgcolor, int16_t tracking);
 void ILI9341_WriteStringScaled(ILI9341_HandleTypeDef* ili9341, uint16_t x, uint16_t y, const char* str,
                                ILI9341_FontDef font, uint16_t color, uint16_t bgcolor, uint16_t scale,
-                               uint16_t tracking);
+                               int16_t tracking);
 void ILI9341_WriteStringTransparent(ILI9341_HandleTypeDef* ili9341, uint16_t x, uint16_t y, const char* str,
-                                    ILI9341_FontDef font, uint16_t color, uint16_t tracking);
+                                    ILI9341_FontDef font, uint16_t color, int16_t tracking);
 void ILI9341_WriteStringTransparentScaled(ILI9341_HandleTypeDef* ili9341, uint16_t x, uint16_t y, const char* str,
-                                          ILI9341_FontDef font, uint16_t color, uint16_t scale, uint16_t tracking);
+                                          ILI9341_FontDef font, uint16_t color, uint16_t scale, int16_t tracking);
 void ILI9341_DrawImage(ILI9341_HandleTypeDef* ili9341, uint16_t x, uint16_t y, uint16_t w, uint16_t h,
                        const uint16_t* data);
 void ILI9341_InvertColors(ILI9341_HandleTypeDef* ili9341, bool invert);
