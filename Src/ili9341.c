@@ -333,7 +333,7 @@ static void ILI9341_WriteChar(
     uint16_t color,
     uint16_t bgcolor
 ) {
-    if (ch < 32 || ch > 127) return;
+    if (ch < 32 || ch > 126) ch = 32;
 
     uint16_t index = (ch - 32) * font.intsPerGlyph;
     uint32_t mask = 0x80000000;
@@ -389,7 +389,7 @@ static void ILI9341_WriteCharScaled(
     uint16_t bgcolor,
     uint16_t scale
 ) {
-    if (ch < 32 || ch > 127) return;
+    if (ch < 32 || ch > 126) ch = 32;
 
     ILI9341_SetAddressWindow(ili9341, x, y, x + font.width * scale - 1, y + font.height * scale - 1);
 
@@ -440,7 +440,7 @@ static void ILI9341_WriteCharTransparent(
     ILI9341_FontDef font,
     uint16_t color
 ) {
-    if (ch < 32 || ch > 127) return;
+    if (ch < 32 || ch > 126) ch = 32;
 
     uint16_t index = (ch - 32) * font.intsPerGlyph;
     uint32_t mask = 0x80000000;
@@ -488,7 +488,7 @@ static void ILI9341_WriteCharTransparentScaled(
     uint16_t color,
     uint16_t scale
 ) {
-    if (ch < 32 || ch > 127) return;
+    if (ch < 32 || ch > 126) ch = 32;
 
     uint16_t index = (ch - 32) * font.intsPerGlyph;
     uint32_t mask = 0x80000000;
