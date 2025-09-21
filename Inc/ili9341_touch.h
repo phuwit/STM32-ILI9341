@@ -28,9 +28,16 @@ typedef struct {
 // call before initializing any SPI devices
 void ILI9341_TouchDeselect(ILI9341_Touch_HandleTypeDef* ili9341_touch);
 
-ILI9341_Touch_HandleTypeDef ILI9341_Touch_Init(SPI_HandleTypeDef* spi_handle, GPIO_TypeDef* cs_port, uint16_t cs_pin,
-                                               GPIO_TypeDef* irq_port, uint16_t irq_pin, uint8_t rotation,
-                                               uint16_t width, uint16_t height);
+ILI9341_Touch_HandleTypeDef ILI9341_Touch_Init(
+    SPI_HandleTypeDef* spi_handle,
+    GPIO_TypeDef* cs_port,
+    uint16_t cs_pin,
+    GPIO_TypeDef* irq_port,
+    uint16_t irq_pin,
+    uint8_t rotation,
+    uint16_t width,
+    uint16_t height
+);
 bool ILI9341_TouchPressed(ILI9341_Touch_HandleTypeDef* ili9341_touch);
 bool ILI9341_TouchGetCoordinates(ILI9341_Touch_HandleTypeDef* ili9341_touch, uint16_t* x, uint16_t* y);
 

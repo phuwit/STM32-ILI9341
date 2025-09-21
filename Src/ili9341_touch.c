@@ -15,17 +15,26 @@ void ILI9341_TouchDeselect(ILI9341_Touch_HandleTypeDef* ili9341_touch) {
     HAL_GPIO_WritePin(ili9341_touch->cs_port, ili9341_touch->cs_pin, GPIO_PIN_SET);
 }
 
-ILI9341_Touch_HandleTypeDef ILI9341_Touch_Init(SPI_HandleTypeDef* spi_handle, GPIO_TypeDef* cs_port, uint16_t cs_pin,
-                                               GPIO_TypeDef* irq_port, uint16_t irq_pin, uint8_t rotation,
-                                               uint16_t width, uint16_t height) {
-    ILI9341_Touch_HandleTypeDef ili9341_touch_instance = {.spi_handle = spi_handle,
-                                                          .cs_port = cs_port,
-                                                          .cs_pin = cs_pin,
-                                                          .irq_port = irq_port,
-                                                          .irq_pin = irq_pin,
-                                                          .rotation = rotation,
-                                                          .width = width,
-                                                          .height = height};
+ILI9341_Touch_HandleTypeDef ILI9341_Touch_Init(
+    SPI_HandleTypeDef* spi_handle,
+    GPIO_TypeDef* cs_port,
+    uint16_t cs_pin,
+    GPIO_TypeDef* irq_port,
+    uint16_t irq_pin,
+    uint8_t rotation,
+    uint16_t width,
+    uint16_t height
+) {
+    ILI9341_Touch_HandleTypeDef ili9341_touch_instance = {
+        .spi_handle = spi_handle,
+        .cs_port = cs_port,
+        .cs_pin = cs_pin,
+        .irq_port = irq_port,
+        .irq_pin = irq_pin,
+        .rotation = rotation,
+        .width = width,
+        .height = height
+    };
 
     ILI9341_TouchDeselect(&ili9341_touch_instance);
 

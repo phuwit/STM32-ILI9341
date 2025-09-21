@@ -17,6 +17,7 @@ extern ILI9341_FontDef ILI9341_Font_Spleen8x16;
 extern ILI9341_FontDef ILI9341_Font_Spleen12x24;
 extern ILI9341_FontDef ILI9341_Font_Spleen16x32;
 extern ILI9341_FontDef ILI9341_Font_Spleen32x64;
+
 extern ILI9341_FontDef ILI9341_Font_Terminus6x12b;
 extern ILI9341_FontDef ILI9341_Font_Terminus6x12;
 extern ILI9341_FontDef ILI9341_Font_Terminus8x14b;

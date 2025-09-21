@@ -34,8 +34,8 @@ static void ILI9341_WriteData(ILI9341_HandleTypeDef* ili9341, uint8_t* buff, siz
     }
 }
 
-static void ILI9341_SetAddressWindow(ILI9341_HandleTypeDef* ili9341, uint16_t x0, uint16_t y0, uint16_t x1,
-                                     uint16_t y1) {
+static void
+ILI9341_SetAddressWindow(ILI9341_HandleTypeDef* ili9341, uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1) {
     // column address set
     ILI9341_WriteCommand(ili9341, 0x2A);  // CASET
     {
@@ -54,19 +54,30 @@ static void ILI9341_SetAddressWindow(ILI9341_HandleTypeDef* ili9341, uint16_t x0
     ILI9341_WriteCommand(ili9341, 0x2C);  // RAMWR
 }
 
-ILI9341_HandleTypeDef ILI9341_Init(SPI_HandleTypeDef* spi_handle, GPIO_TypeDef* cs_port, uint16_t cs_pin,
-                                   GPIO_TypeDef* dc_port, uint16_t dc_pin, GPIO_TypeDef* rst_port, uint16_t rst_pin,
-                                   uint8_t rotation, uint16_t width, uint16_t height) {
-    ILI9341_HandleTypeDef ili9341_instance = {.spi_handle = spi_handle,
-                                              .cs_port = cs_port,
-                                              .cs_pin = cs_pin,
-                                              .dc_port = dc_port,
-                                              .dc_pin = dc_pin,
-                                              .rst_port = rst_port,
-                                              .rst_pin = rst_pin,
-                                              .rotation = rotation,
-                                              .width = width,
-                                              .height = height};
+ILI9341_HandleTypeDef ILI9341_Init(
+    SPI_HandleTypeDef* spi_handle,
+    GPIO_TypeDef* cs_port,
+    uint16_t cs_pin,
+    GPIO_TypeDef* dc_port,
+    uint16_t dc_pin,
+    GPIO_TypeDef* rst_port,
+    uint16_t rst_pin,
+    uint8_t rotation,
+    uint16_t width,
+    uint16_t height
+) {
+    ILI9341_HandleTypeDef ili9341_instance = {
+        .spi_handle = spi_handle,
+        .cs_port = cs_port,
+        .cs_pin = cs_pin,
+        .dc_port = dc_port,
+        .dc_pin = dc_pin,
+        .rst_port = rst_port,
+        .rst_pin = rst_pin,
+        .rotation = rotation,
+        .width = width,
+        .height = height
+    };
 
     ILI9341_HandleTypeDef* ili9341 = &ili9341_instance;
 
@@ -263,8 +274,8 @@ void ILI9341_DrawPixel(ILI9341_HandleTypeDef* ili9341, int16_t x, int16_t y, uin
     ILI9341_Deselect(ili9341);
 }
 
-static void ILI9341_FillRectangleFast(ILI9341_HandleTypeDef* ili9341, int16_t x, int16_t y, int16_t w, int16_t h,
-                                      uint16_t color) {
+static void
+ILI9341_FillRectangleFast(ILI9341_HandleTypeDef* ili9341, int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color) {
     if (w < 0) {
         w = -w;
         x -= w - 1;
@@ -313,8 +324,15 @@ void ILI9341_FillScreen(ILI9341_HandleTypeDef* ili9341, uint16_t color) {
     ILI9341_Deselect(ili9341);
 }
 
-static void ILI9341_WriteChar(ILI9341_HandleTypeDef* ili9341, uint16_t x, uint16_t y, char ch, ILI9341_FontDef font,
-                              uint16_t color, uint16_t bgcolor) {
+static void ILI9341_WriteChar(
+    ILI9341_HandleTypeDef* ili9341,
+    uint16_t x,
+    uint16_t y,
+    char ch,
+    ILI9341_FontDef font,
+    uint16_t color,
+    uint16_t bgcolor
+) {
     if (ch < 32 || ch > 127) return;
 
     uint16_t index = (ch - 32) * font.intsPerGlyph;
@@ -338,8 +356,16 @@ static void ILI9341_WriteChar(ILI9341_HandleTypeDef* ili9341, uint16_t x, uint16
     }
 }
 
-void ILI9341_WriteString(ILI9341_HandleTypeDef* ili9341, uint16_t x, uint16_t y, const char* str, ILI9341_FontDef font,
-                         uint16_t color, uint16_t bgcolor, int16_t tracking) {
+void ILI9341_WriteString(
+    ILI9341_HandleTypeDef* ili9341,
+    uint16_t x,
+    uint16_t y,
+    const char* str,
+    ILI9341_FontDef font,
+    uint16_t color,
+    uint16_t bgcolor,
+    int16_t tracking
+) {
     if (y + font.height - 1 > ili9341->height) return;
 
     ILI9341_Select(ili9341);
@@ -353,8 +379,16 @@ void ILI9341_WriteString(ILI9341_HandleTypeDef* ili9341, uint16_t x, uint16_t y,
     ILI9341_Deselect(ili9341);
 }
 
-static void ILI9341_WriteCharScaled(ILI9341_HandleTypeDef* ili9341, uint16_t x, uint16_t y, char ch,
-                                    ILI9341_FontDef font, uint16_t color, uint16_t bgcolor, uint16_t scale) {
+static void ILI9341_WriteCharScaled(
+    ILI9341_HandleTypeDef* ili9341,
+    uint16_t x,
+    uint16_t y,
+    char ch,
+    ILI9341_FontDef font,
+    uint16_t color,
+    uint16_t bgcolor,
+    uint16_t scale
+) {
     if (ch < 32 || ch > 127) return;
 
     ILI9341_SetAddressWindow(ili9341, x, y, x + font.width * scale - 1, y + font.height * scale - 1);
@@ -374,9 +408,17 @@ static void ILI9341_WriteCharScaled(ILI9341_HandleTypeDef* ili9341, uint16_t x, 
     }
 }
 
-void ILI9341_WriteStringScaled(ILI9341_HandleTypeDef* ili9341, uint16_t x, uint16_t y, const char* str,
-                               ILI9341_FontDef font, uint16_t color, uint16_t bgcolor, uint16_t scale,
-                               int16_t tracking) {
+void ILI9341_WriteStringScaled(
+    ILI9341_HandleTypeDef* ili9341,
+    uint16_t x,
+    uint16_t y,
+    const char* str,
+    ILI9341_FontDef font,
+    uint16_t color,
+    uint16_t bgcolor,
+    uint16_t scale,
+    int16_t tracking
+) {
     if (y + font.height * scale - 1 > ili9341->height) return;
 
     ILI9341_Select(ili9341);
@@ -390,8 +432,14 @@ void ILI9341_WriteStringScaled(ILI9341_HandleTypeDef* ili9341, uint16_t x, uint1
     ILI9341_Deselect(ili9341);
 }
 
-static void ILI9341_WriteCharTransparent(ILI9341_HandleTypeDef* ili9341, uint16_t x, uint16_t y, char ch,
-                                         ILI9341_FontDef font, uint16_t color) {
+static void ILI9341_WriteCharTransparent(
+    ILI9341_HandleTypeDef* ili9341,
+    uint16_t x,
+    uint16_t y,
+    char ch,
+    ILI9341_FontDef font,
+    uint16_t color
+) {
     if (ch < 32 || ch > 127) return;
 
     uint16_t index = (ch - 32) * font.intsPerGlyph;
@@ -409,8 +457,15 @@ static void ILI9341_WriteCharTransparent(ILI9341_HandleTypeDef* ili9341, uint16_
     }
 }
 
-void ILI9341_WriteStringTransparent(ILI9341_HandleTypeDef* ili9341, uint16_t x, uint16_t y, const char* str,
-                                    ILI9341_FontDef font, uint16_t color, int16_t tracking) {
+void ILI9341_WriteStringTransparent(
+    ILI9341_HandleTypeDef* ili9341,
+    uint16_t x,
+    uint16_t y,
+    const char* str,
+    ILI9341_FontDef font,
+    uint16_t color,
+    int16_t tracking
+) {
     if (y + font.height - 1 > ili9341->height) return;
 
     ILI9341_Select(ili9341);
@@ -424,8 +479,15 @@ void ILI9341_WriteStringTransparent(ILI9341_HandleTypeDef* ili9341, uint16_t x, 
     ILI9341_Deselect(ili9341);
 }
 
-static void ILI9341_WriteCharTransparentScaled(ILI9341_HandleTypeDef* ili9341, uint16_t x, uint16_t y, char ch,
-                                               ILI9341_FontDef font, uint16_t color, uint16_t scale) {
+static void ILI9341_WriteCharTransparentScaled(
+    ILI9341_HandleTypeDef* ili9341,
+    uint16_t x,
+    uint16_t y,
+    char ch,
+    ILI9341_FontDef font,
+    uint16_t color,
+    uint16_t scale
+) {
     if (ch < 32 || ch > 127) return;
 
     uint16_t index = (ch - 32) * font.intsPerGlyph;
@@ -445,8 +507,16 @@ static void ILI9341_WriteCharTransparentScaled(ILI9341_HandleTypeDef* ili9341, u
     }
 }
 
-void ILI9341_WriteStringTransparentScaled(ILI9341_HandleTypeDef* ili9341, uint16_t x, uint16_t y, const char* str,
-                                          ILI9341_FontDef font, uint16_t color, uint16_t scale, int16_t tracking) {
+void ILI9341_WriteStringTransparentScaled(
+    ILI9341_HandleTypeDef* ili9341,
+    uint16_t x,
+    uint16_t y,
+    const char* str,
+    ILI9341_FontDef font,
+    uint16_t color,
+    uint16_t scale,
+    int16_t tracking
+) {
     if (y + font.height * scale - 1 > ili9341->height) return;
 
     ILI9341_Select(ili9341);
@@ -460,8 +530,14 @@ void ILI9341_WriteStringTransparentScaled(ILI9341_HandleTypeDef* ili9341, uint16
     ILI9341_Deselect(ili9341);
 }
 
-void ILI9341_DrawImage(ILI9341_HandleTypeDef* ili9341, uint16_t x, uint16_t y, uint16_t w, uint16_t h,
-                       const uint16_t* data) {
+void ILI9341_DrawImage(
+    ILI9341_HandleTypeDef* ili9341,
+    uint16_t x,
+    uint16_t y,
+    uint16_t w,
+    uint16_t h,
+    const uint16_t* data
+) {
     if (x >= ili9341->width || y >= ili9341->height || (x + w - 1) >= ili9341->width || (y + h - 1) >= ili9341->height)
         return;
 
@@ -477,8 +553,8 @@ void ILI9341_InvertColors(ILI9341_HandleTypeDef* ili9341, bool invert) {
     ILI9341_Deselect(ili9341);
 }
 
-static void ILI9341_DrawLineFast(ILI9341_HandleTypeDef* ili9341, int16_t x1, int16_t y1, int16_t x2, int16_t y2,
-                                 uint16_t color) {
+static void
+ILI9341_DrawLineFast(ILI9341_HandleTypeDef* ili9341, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color) {
     if (x1 == x2) {
         ILI9341_FillRectangleFast(ili9341, x1, y1, 1, y2 - y1 + 1, color);
         return;
@@ -512,8 +588,16 @@ void ILI9341_DrawLine(ILI9341_HandleTypeDef* ili9341, int16_t x1, int16_t y1, in
     ILI9341_Deselect(ili9341);
 }
 
-void ILI9341_DrawLineThick(ILI9341_HandleTypeDef* ili9341, int16_t x1, int16_t y1, int16_t x2, int16_t y2,
-                           uint16_t color, uint16_t thickness, bool cap) {
+void ILI9341_DrawLineThick(
+    ILI9341_HandleTypeDef* ili9341,
+    int16_t x1,
+    int16_t y1,
+    int16_t x2,
+    int16_t y2,
+    uint16_t color,
+    uint16_t thickness,
+    bool cap
+) {
     if (thickness == 0) return;
     if (thickness == 1) {
         ILI9341_DrawLine(ili9341, x1, y1, x2, y2, color);
@@ -552,10 +636,18 @@ void ILI9341_DrawLineThick(ILI9341_HandleTypeDef* ili9341, int16_t x1, int16_t y
     float half_thickness = thickness / 2.0f;
 
     // calculate corner points
-    int16_t corners_x[4] = {(int16_t)(x1 + px * half_thickness), (int16_t)(x1 - px * half_thickness),
-                            (int16_t)(x2 - px * half_thickness), (int16_t)(x2 + px * half_thickness)};
-    int16_t corners_y[4] = {(int16_t)(y1 + py * half_thickness), (int16_t)(y1 - py * half_thickness),
-                            (int16_t)(y2 - py * half_thickness), (int16_t)(y2 + py * half_thickness)};
+    int16_t corners_x[4] = {
+        (int16_t)(x1 + px * half_thickness),
+        (int16_t)(x1 - px * half_thickness),
+        (int16_t)(x2 - px * half_thickness),
+        (int16_t)(x2 + px * half_thickness)
+    };
+    int16_t corners_y[4] = {
+        (int16_t)(y1 + py * half_thickness),
+        (int16_t)(y1 - py * half_thickness),
+        (int16_t)(y2 - py * half_thickness),
+        (int16_t)(y2 + py * half_thickness)
+    };
 
     ILI9341_FillPolygon(ili9341, corners_x, corners_y, 4, color);
 
@@ -569,8 +661,15 @@ void ILI9341_DrawRectangle(ILI9341_HandleTypeDef* ili9341, int16_t x, int16_t y,
     ILI9341_DrawRectangleThick(ili9341, x, y, w, h, color, 1);
 }
 
-void ILI9341_DrawRectangleThick(ILI9341_HandleTypeDef* ili9341, int16_t x, int16_t y, int16_t w, int16_t h,
-                                uint16_t color, uint16_t thickness) {
+void ILI9341_DrawRectangleThick(
+    ILI9341_HandleTypeDef* ili9341,
+    int16_t x,
+    int16_t y,
+    int16_t w,
+    int16_t h,
+    uint16_t color,
+    uint16_t thickness
+) {
     if (thickness == 0) return;
 
     ILI9341_Select(ili9341);
@@ -620,8 +719,14 @@ void ILI9341_DrawCircle(ILI9341_HandleTypeDef* ili9341, int16_t xc, int16_t yc, 
     ILI9341_Deselect(ili9341);
 }
 
-void ILI9341_DrawCircleThick(ILI9341_HandleTypeDef* ili9341, int16_t xc, int16_t yc, uint16_t r, uint16_t color,
-                             uint16_t thickness) {
+void ILI9341_DrawCircleThick(
+    ILI9341_HandleTypeDef* ili9341,
+    int16_t xc,
+    int16_t yc,
+    uint16_t r,
+    uint16_t color,
+    uint16_t thickness
+) {
     if (thickness == 0 || thickness > r) return;
 
     int16_t ri = r - thickness;
@@ -693,8 +798,15 @@ void ILI9341_DrawPolygon(ILI9341_HandleTypeDef* ili9341, int16_t* x, int16_t* y,
     ILI9341_Deselect(ili9341);
 }
 
-void ILI9341_DrawPolygonThick(ILI9341_HandleTypeDef* ili9341, int16_t* x, int16_t* y, uint16_t n, uint16_t color,
-                              uint16_t thickness, bool cap) {
+void ILI9341_DrawPolygonThick(
+    ILI9341_HandleTypeDef* ili9341,
+    int16_t* x,
+    int16_t* y,
+    uint16_t n,
+    uint16_t color,
+    uint16_t thickness,
+    bool cap
+) {
     if (n < 2 || thickness == 0) return;
 
     for (uint16_t i = 0; i < n - 1; i++) {
