@@ -3,33 +3,35 @@
 #define __ILI9341_TOUCH_H__
 
 #include "stdbool.h"
+#include "stdint.h"
+#include "stm32f7xx_hal.h"
 
-/*** Redefine if necessary ***/
-
-// Warning! Use SPI bus with < 1.3 Mbit speed, better ~650 Kbit to be save.
-#define ILI9341_TOUCH_SPI_HANDLE hspi2
-extern SPI_HandleTypeDef ILI9341_TOUCH_SPI_HANDLE;
-
-#define ILI9341_TOUCH_CS_GPIO_Port GPIOE
-#define ILI9341_TOUCH_CS_Pin GPIO_PIN_6
-
-#define ILI9341_TOUCH_IRQ_GPIO_Port GPIOE
-#define ILI9341_TOUCH_IRQ_Pin GPIO_PIN_2
-
-// change depending on screen orientation
-#define ILI9341_TOUCH_SCALE_X 320
-#define ILI9341_TOUCH_SCALE_Y 240
-
+// Raw touch values range
 // to calibrate uncomment UART_Printf line in ili9341_touch.c
 #define ILI9341_TOUCH_MIN_RAW_X 1500
 #define ILI9341_TOUCH_MAX_RAW_X 31000
 #define ILI9341_TOUCH_MIN_RAW_Y 3276
 #define ILI9341_TOUCH_MAX_RAW_Y 30110
 
-// call before initializing any SPI devices
-void ILI9341_TouchDeselect();
+// Handle type definition
+typedef struct {
+    SPI_HandleTypeDef* spi_handle;
+    GPIO_TypeDef* cs_port;
+    uint16_t cs_pin;
+    GPIO_TypeDef* irq_port;
+    uint16_t irq_pin;
+    uint8_t rotation;
+    uint16_t width;
+    uint16_t height;
+} ILI9341_Touch_HandleTypeDef;
 
-bool ILI9341_TouchPressed();
-bool ILI9341_TouchGetCoordinates(uint16_t* x, uint16_t* y);
+// call before initializing any SPI devices
+void ILI9341_TouchDeselect(ILI9341_Touch_HandleTypeDef* ili9341_touch);
+
+ILI9341_Touch_HandleTypeDef ILI9341_Touch_Init(SPI_HandleTypeDef* spi_handle, GPIO_TypeDef* cs_port, uint16_t cs_pin,
+                                               GPIO_TypeDef* irq_port, uint16_t irq_pin, uint8_t rotation,
+                                               uint16_t width, uint16_t height);
+bool ILI9341_TouchPressed(ILI9341_Touch_HandleTypeDef* ili9341_touch);
+bool ILI9341_TouchGetCoordinates(ILI9341_Touch_HandleTypeDef* ili9341_touch, uint16_t* x, uint16_t* y);
 
 #endif  // __ILI9341_TOUCH_H__

@@ -5,6 +5,9 @@
 #include "ili9341_fonts.h"
 #include "math.h"
 #include "stdbool.h"
+#include "stdint.h"
+#include "stdlib.h"
+#include "stm32f7xx_hal.h"
 
 #define ILI9341_MADCTL_MY 0x80
 #define ILI9341_MADCTL_MX 0x40
@@ -14,38 +17,17 @@
 #define ILI9341_MADCTL_BGR 0x08
 #define ILI9341_MADCTL_MH 0x04
 
-/*** Redefine if necessary ***/
-#define ILI9341_SPI_HANDLE hspi1
-extern SPI_HandleTypeDef ILI9341_SPI_HANDLE;
-
-#define ILI9341_CS_GPIO_Port GPIOC
-#define ILI9341_CS_Pin GPIO_PIN_8
-
-#define ILI9341_DC_GPIO_Port GPIOC
-#define ILI9341_DC_Pin GPIO_PIN_9
-
-#define ILI9341_RES_GPIO_Port GPIOC
-#define ILI9341_RES_Pin GPIO_PIN_10
-
 // default orientation
-// #define ILI9341_WIDTH 240
-// #define ILI9341_HEIGHT 320
-// #define ILI9341_ROTATION (ILI9341_MADCTL_MX | ILI9341_MADCTL_BGR)
+#define ILI9341_ROTATION_VERTICAL_1 0
 
 // rotate right
-// #define ILI9341_WIDTH  320
-// #define ILI9341_HEIGHT 240
-// #define ILI9341_ROTATION (ILI9341_MADCTL_MX | ILI9341_MADCTL_MY | ILI9341_MADCTL_MV | ILI9341_MADCTL_BGR)
+#define ILI9341_ROTATION_HORIZONTAL_1 1
 
 // rotate left
-#define ILI9341_WIDTH 320
-#define ILI9341_HEIGHT 240
-#define ILI9341_ROTATION (ILI9341_MADCTL_MV | ILI9341_MADCTL_BGR)
+#define ILI9341_ROTATION_HORIZONTAL_2 2
 
 // upside down
-// #define ILI9341_WIDTH  240
-// #define ILI9341_HEIGHT 320
-// #define ILI9341_ROTATION (ILI9341_MADCTL_MY | ILI9341_MADCTL_BGR)
+#define ILI9341_ROTATION_VERTICAL_2 3
 
 /****************************/
 
@@ -59,29 +41,57 @@ extern SPI_HandleTypeDef ILI9341_SPI_HANDLE;
 #define ILI9341_YELLOW 0xFFE0
 #define ILI9341_WHITE 0xFFFF
 
-#define ILI9341_COLOR565(r, g, b) (((r & 0xF8) << 8) | ((g & 0xFC) << 3) | ((b & 0xF8) >> 3))
+#define ILI9341_COLOR565(r, g, b) \
+    ((((uint16_t)r & 0xF8) << 8) | (((uint16_t)g & 0xFC) << 3) | (((uint16_t)b & 0xF8) >> 3))
+
+// Handle type definition
+typedef struct {
+    SPI_HandleTypeDef* spi_handle;
+    GPIO_TypeDef* cs_port;
+    uint16_t cs_pin;
+    GPIO_TypeDef* dc_port;
+    uint16_t dc_pin;
+    GPIO_TypeDef* rst_port;
+    uint16_t rst_pin;
+    uint8_t rotation;
+    uint16_t width;
+    uint16_t height;
+} ILI9341_HandleTypeDef;
 
 // call before initializing any SPI devices
-void ILI9341_Deselect();
+void ILI9341_Deselect(ILI9341_HandleTypeDef* ili9341);
 
-void ILI9341_Init(void);
-void ILI9341_DrawPixel(int16_t x, int16_t y, uint16_t color);
-void ILI9341_WriteString(uint16_t x, uint16_t y, const char* str, ILI9341_FontDef font, uint16_t color, uint16_t bgcolor);
-void ILI9341_WriteStringTransparent(uint16_t x, uint16_t y, const char* str, ILI9341_FontDef font, uint16_t color);
-void ILI9341_FillRectangle(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
-void ILI9341_FillScreen(uint16_t color);
-void ILI9341_DrawImage(uint16_t x, uint16_t y, uint16_t w, uint16_t h, const uint16_t* data);
-void ILI9341_InvertColors(bool invert);
+ILI9341_HandleTypeDef ILI9341_Init(SPI_HandleTypeDef* spi_handle, GPIO_TypeDef* cs_port, uint16_t cs_pin,
+                                   GPIO_TypeDef* dc_port, uint16_t dc_pin, GPIO_TypeDef* rst_port, uint16_t rst_pin,
+                                   uint8_t rotation, uint16_t width, uint16_t height);
+void ILI9341_DrawPixel(ILI9341_HandleTypeDef* ili9341, int16_t x, int16_t y, uint16_t color);
+void ILI9341_FillRectangle(ILI9341_HandleTypeDef* ili9341, int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
+void ILI9341_FillScreen(ILI9341_HandleTypeDef* ili9341, uint16_t color);
+void ILI9341_WriteString(ILI9341_HandleTypeDef* ili9341, uint16_t x, uint16_t y, const char* str, ILI9341_FontDef font,
+                         uint16_t color, uint16_t bgcolor);
+void ILI9341_WriteStringScaled(ILI9341_HandleTypeDef* ili9341, uint16_t x, uint16_t y, const char* str,
+                               ILI9341_FontDef font, uint16_t color, uint16_t bgcolor, uint16_t scale);
+void ILI9341_WriteStringTransparent(ILI9341_HandleTypeDef* ili9341, uint16_t x, uint16_t y, const char* str,
+                                    ILI9341_FontDef font, uint16_t color);
+void ILI9341_WriteStringTransparentScaled(ILI9341_HandleTypeDef* ili9341, uint16_t x, uint16_t y, const char* str,
+                                          ILI9341_FontDef font, uint16_t color, uint16_t scale);
+void ILI9341_DrawImage(ILI9341_HandleTypeDef* ili9341, uint16_t x, uint16_t y, uint16_t w, uint16_t h,
+                       const uint16_t* data);
+void ILI9341_InvertColors(ILI9341_HandleTypeDef* ili9341, bool invert);
 
-void ILI9341_DrawLine(int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color);
-void ILI9341_DrawLineThick(int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color, uint16_t thickness, bool cap);
-void ILI9341_DrawRectangle(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
-void ILI9341_DrawRectangleThick(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color, uint16_t thickness);
-void ILI9341_DrawCircle(int16_t x, int16_t y, uint16_t r, uint16_t color);
-void ILI9341_DrawCircleThick(int16_t x0, int16_t y0, uint16_t r, uint16_t color, uint16_t thickness);
-void ILI9341_FillCircle(int16_t x, int16_t y, uint16_t r, uint16_t color);
-void ILI9341_DrawPolygon(int16_t* x, int16_t* y, uint16_t n, uint16_t color);
-void ILI9341_DrawPolygonThick(int16_t* x, int16_t* y, uint16_t n, uint16_t color, uint16_t thickness, bool cap);
-void ILI9341_FillPolygon(int16_t* x, int16_t* y, uint16_t n, uint16_t color);
+void ILI9341_DrawLine(ILI9341_HandleTypeDef* ili9341, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color);
+void ILI9341_DrawLineThick(ILI9341_HandleTypeDef* ili9341, int16_t x1, int16_t y1, int16_t x2, int16_t y2,
+                           uint16_t color, uint16_t thickness, bool cap);
+void ILI9341_DrawRectangle(ILI9341_HandleTypeDef* ili9341, int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
+void ILI9341_DrawRectangleThick(ILI9341_HandleTypeDef* ili9341, int16_t x, int16_t y, int16_t w, int16_t h,
+                                uint16_t color, uint16_t thickness);
+void ILI9341_DrawCircle(ILI9341_HandleTypeDef* ili9341, int16_t x, int16_t y, uint16_t r, uint16_t color);
+void ILI9341_DrawCircleThick(ILI9341_HandleTypeDef* ili9341, int16_t x0, int16_t y0, uint16_t r, uint16_t color,
+                             uint16_t thickness);
+void ILI9341_FillCircle(ILI9341_HandleTypeDef* ili9341, int16_t x, int16_t y, uint16_t r, uint16_t color);
+void ILI9341_DrawPolygon(ILI9341_HandleTypeDef* ili9341, int16_t* x, int16_t* y, uint16_t n, uint16_t color);
+void ILI9341_DrawPolygonThick(ILI9341_HandleTypeDef* ili9341, int16_t* x, int16_t* y, uint16_t n, uint16_t color,
+                              uint16_t thickness, bool cap);
+void ILI9341_FillPolygon(ILI9341_HandleTypeDef* ili9341, int16_t* x, int16_t* y, uint16_t n, uint16_t color);
 
 #endif  // __ILI9341_H__
