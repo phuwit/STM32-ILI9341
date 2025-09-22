@@ -1,5 +1,7 @@
 /* vim: set ai et ts=4 sw=4: */
 #include "ili9341.h"
+#include <stdint.h>
+#include <string.h>
 
 #include "stm32f7xx_hal.h"
 
@@ -710,6 +712,49 @@ void ILI9341_DrawImage(
     ILI9341_WriteData(ili9341, (uint8_t*)data, sizeof(uint16_t) * w * h);
     ILI9341_Deselect(ili9341);
 }
+
+
+void ILI9341_DrawImageWithClip(
+    ILI9341_HandleTypeDef* ili9341,
+    int16_t x,
+    int16_t y,
+    uint16_t w,
+    uint16_t h,
+    const uint16_t* data
+) {
+    int16_t dataRow = 0;
+    if (y < 0) dataRow = -y;
+
+    uint16_t readDataFromIndex = 0;
+    int16_t columnStart = x;
+    if (x < 0) {
+        readDataFromIndex -= x;
+        columnStart = 0;
+    }
+
+    uint16_t readDataToIndex = w;
+    int16_t columnEnd = x + w - 1;
+    if (columnEnd >= ili9341->width) {
+        readDataToIndex -= (w + x) - ili9341->width;
+        columnEnd = ili9341->width - 1;
+    }
+
+    uint16_t bufferSize = readDataToIndex - readDataFromIndex;
+    if (bufferSize == 0 || h == 0) return;
+    uint16_t buffer[bufferSize];
+
+    ILI9341_Select(ili9341);
+    for (; dataRow < h; dataRow += 1) {
+        int16_t displayRow = y + dataRow;
+        if (displayRow < 0) continue;
+        if (displayRow >= ili9341->height) break;
+        memcpy(buffer, &data[dataRow * w + readDataFromIndex], sizeof(uint16_t) * bufferSize);
+        ILI9341_SetAddressWindow(ili9341, columnStart, displayRow, columnEnd, displayRow);
+        ILI9341_WriteData(ili9341, (uint8_t*)buffer, sizeof(uint16_t) * bufferSize);
+    }
+    ILI9341_Deselect(ili9341);
+}
+
 
 void ILI9341_InvertColors(ILI9341_HandleTypeDef* ili9341, bool invert) {
     ILI9341_Select(ili9341);

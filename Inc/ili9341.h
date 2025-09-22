@@ -239,6 +239,25 @@ void ILI9341_DrawImage(
 );
 
 /**
+ * @brief Draw an image (bitmap) at specified coordinates, clip out of bounds pixels
+ * @param ili9341 Pointer to ILI9341 handle structure
+ * @param x X coordinate of the top-left corner of the image
+ * @param y Y coordinate of the top-left corner of the image
+ * @param w Width of the image in pixels
+ * @param h Height of the image in pixels
+ * @param data Pointer to the image pixel data in RGB565 format with the 2 bytes swapped, must contain at least w*h
+ * elements
+ */
+void ILI9341_DrawImageWithClip(
+    ILI9341_HandleTypeDef* ili9341,
+    int16_t x,
+    int16_t y,
+    uint16_t w,
+    uint16_t h,
+    const uint16_t* data
+);
+
+/**
  * @brief Invert the display colors
  * @param ili9341 Pointer to ILI9341 handle structure
  * @param invert true to invert colors, false for normal colors
