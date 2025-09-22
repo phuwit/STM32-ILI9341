@@ -18,6 +18,41 @@ See also:
 [u2]: https://github.com/afiskon/stm32-ssd1306
 [u3]: https://github.com/martnak/STM32-ILI9341
 
-## Documentations
+## Usage
 
-There's currently no documentation, the best way to know how to use this library is to read the source code. The documentation will come at a later time.
+1. Initialize the ILI9341 and/or the touch controller using the init functions (the display and the touchscreen can be used independently)
+
+```c
+ILI9341_HandleTypeDef ili9341 = ILI9341_Init(
+    &hspi5,
+    ILI9341_CS_GPIO_Port,
+    ILI9341_CS_Pin,
+    ILI9341_DC_GPIO_Port,
+    ILI9341_DC_Pin,
+    ILI9341_RST_GPIO_Port,
+    ILI9341_RST_Pin,
+    ILI9341_ROTATION_HORIZONTAL_1,
+    320,
+    240
+);
+
+ILI9341_Touch_HandleTypeDef ili9341_touch = ILI9341_Touch_Init(
+    &hspi4,
+    ILI9341_Touch_CS_GPIO_Port,
+    ILI9341_Touch_CS_Pin,
+    ILI9341_Touch_IRQ_GPIO_Port,
+    ILI9341_Touch_IRQ_Pin,
+    ILI9341_ROTATION_HORIZONTAL_1,
+    320,
+    240
+);
+```
+
+2. Use functions to do stuffs, always pass the pointer to the handle as the first argument so the function know what display you want to manipulate. You can have multiple displays and even on the same SPI bus, you'll need to initialize them separately and manipulate them one at a time.
+
+```c
+ILI9341_FillScreen(&ili9341_1, ILI9341_COLOR_WHITE);
+ILI9341_FillScreen(&ili9341_2, ILI9341_COLOR_WHITE);
+```
+
+More informations and documentations are available in the header files. Examples and functionality tests are available in the [example](./example.c)
