@@ -34,8 +34,13 @@ static void ILI9341_WriteData(ILI9341_HandleTypeDef* ili9341, uint8_t* buff, siz
     }
 }
 
-static void
-ILI9341_SetAddressWindow(ILI9341_HandleTypeDef* ili9341, uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1) {
+static void ILI9341_SetAddressWindow(
+    ILI9341_HandleTypeDef* ili9341,
+    uint16_t x0,
+    uint16_t y0,
+    uint16_t x1,
+    uint16_t y1
+) {
     // column address set
     ILI9341_WriteCommand(ili9341, 0x2A);  // CASET
     {
@@ -274,8 +279,14 @@ void ILI9341_DrawPixel(ILI9341_HandleTypeDef* ili9341, int16_t x, int16_t y, uin
     ILI9341_Deselect(ili9341);
 }
 
-static void
-ILI9341_FillRectangleFast(ILI9341_HandleTypeDef* ili9341, int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color) {
+static void ILI9341_FillRectangleFast(
+    ILI9341_HandleTypeDef* ili9341,
+    int16_t x,
+    int16_t y,
+    int16_t w,
+    int16_t h,
+    uint16_t color
+) {
     if (w < 0) {
         w = -w;
         x -= w - 1;
@@ -303,13 +314,22 @@ ILI9341_FillRectangleFast(ILI9341_HandleTypeDef* ili9341, int16_t x, int16_t y, 
 
     ILI9341_SetAddressWindow(ili9341, x, y, x + w - 1, y + h - 1);
 
-    uint8_t data[] = {color >> 8, color & 0xFF};
-    HAL_GPIO_WritePin(ili9341->dc_port, ili9341->dc_pin, GPIO_PIN_SET);
-    for (uint16_t row = 0; row < h; row++) {
-        for (uint16_t col = 0; col < w; col++) {
-            HAL_SPI_Transmit(ili9341->spi_handle, data, sizeof(data), HAL_MAX_DELAY);
-        }
+    // Slow but more memory efficient version
+    // uint8_t data[] = {color >> 8, color & 0xFF};
+    // HAL_GPIO_WritePin(ili9341->dc_port, ili9341->dc_pin, GPIO_PIN_SET);
+    // for (uint16_t row = 0; row < h; row++) {
+    //     for (uint16_t col = 0; col < w; col++) {
+    //         HAL_SPI_Transmit(ili9341->spi_handle, data, sizeof(data), HAL_MAX_DELAY);
+    //     }
+    // }
+
+    uint8_t buffer[w * h * 2];
+    for (uint32_t i = 0; i < w * h; i++) {
+        buffer[i * 2] = color >> 8;
+        buffer[i * 2 + 1] = color & 0xFF;
     }
+
+    ILI9341_WriteData(ili9341, buffer, sizeof(buffer));
 }
 
 void ILI9341_FillRectangle(ILI9341_HandleTypeDef* ili9341, int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color) {
@@ -553,8 +573,14 @@ void ILI9341_InvertColors(ILI9341_HandleTypeDef* ili9341, bool invert) {
     ILI9341_Deselect(ili9341);
 }
 
-static void
-ILI9341_DrawLineFast(ILI9341_HandleTypeDef* ili9341, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color) {
+static void ILI9341_DrawLineFast(
+    ILI9341_HandleTypeDef* ili9341,
+    int16_t x1,
+    int16_t y1,
+    int16_t x2,
+    int16_t y2,
+    uint16_t color
+) {
     if (x1 == x2) {
         ILI9341_FillRectangleFast(ili9341, x1, y1, 1, y2 - y1 + 1, color);
         return;
