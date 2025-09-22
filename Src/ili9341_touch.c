@@ -7,6 +7,10 @@
 #define READ_X 0xD0
 #define READ_Y 0x90
 
+/**
+ * @brief Select the ILI9341 touch controller
+ * @param ili9341_touch Pointer to the ILI9341_Touch_HandleTypeDef structure
+ */
 static void ILI9341_TouchSelect(ILI9341_Touch_HandleTypeDef* ili9341_touch) {
     HAL_GPIO_WritePin(ili9341_touch->cs_port, ili9341_touch->cs_pin, GPIO_PIN_RESET);
 }

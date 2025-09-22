@@ -5,16 +5,16 @@
 #include "stdint.h"
 
 /**
- * @brief  Font data structure
+ * @brief Font definition structure
  */
 typedef struct {
-    /** Font width in pixels */
+    /** Font width in pixels per glyph */
     const uint16_t width;
-    /** Font height in pixels */
+    /** Font height in pixels per glyph */
     const uint16_t height;
     /** Number of integers used to store a glyph */
     const uint16_t intsPerGlyph;
-    /** Pointer to the actual font data */
+    /** Pointer to the actual font data, the data format is binary bitmap stored as uint32_t array */
     const uint32_t* data;
 } ILI9341_FontDef;
 

@@ -3,6 +3,10 @@
 
 #include "stm32f7xx_hal.h"
 
+/**
+ * @brief Select the ILI9341 display
+ * @param ili9341 Pointer to ILI9341 handle structure
+ */
 static void ILI9341_Select(ILI9341_HandleTypeDef* ili9341) {
     HAL_GPIO_WritePin(ili9341->cs_port, ili9341->cs_pin, GPIO_PIN_RESET);
 }
@@ -11,17 +15,32 @@ void ILI9341_Deselect(ILI9341_HandleTypeDef* ili9341) {
     HAL_GPIO_WritePin(ili9341->cs_port, ili9341->cs_pin, GPIO_PIN_SET);
 }
 
+/**
+ * @brief Reset the ILI9341 display
+ * @param ili9341 Pointer to ILI9341 handle structure
+ */
 static void ILI9341_Reset(ILI9341_HandleTypeDef* ili9341) {
     HAL_GPIO_WritePin(ili9341->rst_port, ili9341->rst_pin, GPIO_PIN_RESET);
     HAL_Delay(5);
     HAL_GPIO_WritePin(ili9341->rst_port, ili9341->rst_pin, GPIO_PIN_SET);
 }
 
+/**
+ * @brief Write a command to the ILI9341 display
+ * @param ili9341 Pointer to ILI9341 handle structure
+ * @param cmd Command byte to write
+ */
 static void ILI9341_WriteCommand(ILI9341_HandleTypeDef* ili9341, uint8_t cmd) {
     HAL_GPIO_WritePin(ili9341->dc_port, ili9341->dc_pin, GPIO_PIN_RESET);
     HAL_SPI_Transmit(ili9341->spi_handle, &cmd, sizeof(cmd), HAL_MAX_DELAY);
 }
 
+/**
+ * @brief Write data to the ILI9341 display
+ * @param ili9341 Pointer to ILI9341 handle structure
+ * @param buff Pointer to the data buffer
+ * @param buff_size Size of the data buffer
+ */
 static void ILI9341_WriteData(ILI9341_HandleTypeDef* ili9341, uint8_t* buff, size_t buff_size) {
     HAL_GPIO_WritePin(ili9341->dc_port, ili9341->dc_pin, GPIO_PIN_SET);
 
@@ -34,6 +53,14 @@ static void ILI9341_WriteData(ILI9341_HandleTypeDef* ili9341, uint8_t* buff, siz
     }
 }
 
+/**
+ * @brief Set the address window for subsequent pixel data
+ * @param ili9341 Pointer to ILI9341 handle structure
+ * @param x0 X coordinate of the top-left corner of the window
+ * @param y0 Y coordinate of the top-left corner of the window
+ * @param x1 X coordinate of the bottom-right corner of the window
+ * @param y1 Y coordinate of the bottom-right corner of the window
+ */
 static void ILI9341_SetAddressWindow(
     ILI9341_HandleTypeDef* ili9341,
     uint16_t x0,
@@ -317,6 +344,13 @@ void ILI9341_SetOrientation(ILI9341_HandleTypeDef* ili9341, uint8_t rotation) {
     ILI9341_Deselect(ili9341);
 }
 
+/**
+ * @brief Draw a pixel at specified coordinates without selecting/deselecting the display
+ * @param ili9341 Pointer to ILI9341 handle structure
+ * @param x X coordinate of the pixel
+ * @param y Y coordinate of the pixel
+ * @param color 16-bit pixel color in RGB565 format
+ */
 static void ILI9341_DrawPixelFast(ILI9341_HandleTypeDef* ili9341, int16_t x, int16_t y, uint16_t color) {
     if (x < 0 || y < 0 || x >= ili9341->width || y >= ili9341->height) return;
 
@@ -331,6 +365,15 @@ void ILI9341_DrawPixel(ILI9341_HandleTypeDef* ili9341, int16_t x, int16_t y, uin
     ILI9341_Deselect(ili9341);
 }
 
+/**
+ * @brief Fill a rectangle without selecting/deselecting the display
+ * @param ili9341 Pointer to ILI9341 handle structure
+ * @param x X coordinate of the top-left corner of the rectangle
+ * @param y Y coordinate of the top-left corner of the rectangle
+ * @param w Width of the rectangle in pixels, can be negative
+ * @param h Height of the rectangle in pixels, can be negative
+ * @param color 16-bit fill color in RGB565 format
+ */
 static void ILI9341_FillRectangleFast(
     ILI9341_HandleTypeDef* ili9341,
     int16_t x,
@@ -393,6 +436,16 @@ void ILI9341_FillScreen(ILI9341_HandleTypeDef* ili9341, uint16_t color) {
     ILI9341_Deselect(ili9341);
 }
 
+/**
+ * @brief Write a character at specified coordinates without selecting/deselecting the display
+ * @param ili9341 Pointer to ILI9341 handle structure
+ * @param x X coordinate of the top-left of the character
+ * @param y Y coordinate of the top-left of the character
+ * @param ch ASCII character to write
+ * @param font Font definition to use for rendering the character
+ * @param color 16-bit character color in RGB565 format
+ * @param bgcolor 16-bit background color in RGB565 format
+ */
 static void ILI9341_WriteChar(
     ILI9341_HandleTypeDef* ili9341,
     uint16_t x,
@@ -449,6 +502,17 @@ void ILI9341_WriteString(
     ILI9341_Deselect(ili9341);
 }
 
+/**
+ * @brief Write a scaled character at specified coordinates without selecting/deselecting the display
+ * @param ili9341 Pointer to ILI9341 handle structure
+ * @param x X coordinate of the top-left of the character
+ * @param y Y coordinate of the top-left of the character
+ * @param ch ASCII character to write
+ * @param font Font definition to use for rendering the character
+ * @param color 16-bit character color in RGB565 format
+ * @param bgcolor 16-bit background color in RGB565 format
+ * @param scale Scaling factor (integer) to enlarge the character
+ */
 static void ILI9341_WriteCharScaled(
     ILI9341_HandleTypeDef* ili9341,
     uint16_t x,
@@ -511,6 +575,16 @@ void ILI9341_WriteStringScaled(
     ILI9341_Deselect(ili9341);
 }
 
+/**
+ * @brief Write a character with transparent background at specified coordinates without selecting/deselecting the
+ * display
+ * @param ili9341 Pointer to ILI9341 handle structure
+ * @param x X coordinate of the top-left of the character
+ * @param y Y coordinate of the top-left of the character
+ * @param ch ASCII character to write
+ * @param font Font definition to use for rendering the character
+ * @param color 16-bit character color in RGB565 format
+ */
 static void ILI9341_WriteCharTransparent(
     ILI9341_HandleTypeDef* ili9341,
     uint16_t x,
@@ -558,6 +632,17 @@ void ILI9341_WriteStringTransparent(
     ILI9341_Deselect(ili9341);
 }
 
+/**
+ * @brief Write a scaled character with transparent background at specified coordinates without selecting/deselecting
+ * the display
+ * @param ili9341 Pointer to ILI9341 handle structure
+ * @param x X coordinate of the top-left of the character
+ * @param y Y coordinate of the top-left of the character
+ * @param ch ASCII character to write
+ * @param font Font definition to use for rendering the character
+ * @param color 16-bit character color in RGB565 format
+ * @param scale Scaling factor (integer) to enlarge the character
+ */
 static void ILI9341_WriteCharTransparentScaled(
     ILI9341_HandleTypeDef* ili9341,
     uint16_t x,
@@ -632,6 +717,15 @@ void ILI9341_InvertColors(ILI9341_HandleTypeDef* ili9341, bool invert) {
     ILI9341_Deselect(ili9341);
 }
 
+/**
+ * @brief Draw a line using Bresenham's algorithm without selecting/deselecting the display
+ * @param ili9341 Pointer to ILI9341 handle structure
+ * @param x1 X coordinate of the start point
+ * @param y1 Y coordinate of the start point
+ * @param x2 X coordinate of the end point
+ * @param y2 Y coordinate of the end point
+ * @param color 16-bit line color in RGB565 format
+ */
 static void ILI9341_DrawLineFast(
     ILI9341_HandleTypeDef* ili9341,
     int16_t x1,
