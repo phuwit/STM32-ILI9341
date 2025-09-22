@@ -7,6 +7,7 @@
 #include "stdbool.h"
 #include "stdint.h"
 #include "stdlib.h"
+#include "string.h"
 #include "stm32f7xx_hal.h"
 
 #define ILI9341_MADCTL_MY 0x80

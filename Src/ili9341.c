@@ -1,7 +1,5 @@
 /* vim: set ai et ts=4 sw=4: */
 #include "ili9341.h"
-#include <stdint.h>
-#include <string.h>
 
 #include "stm32f7xx_hal.h"
 
