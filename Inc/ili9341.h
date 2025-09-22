@@ -29,20 +29,21 @@
 // upside down
 #define ILI9341_ROTATION_VERTICAL_2 3
 
-/****************************/
-
 // Color definitions
-#define ILI9341_BLACK 0x0000
-#define ILI9341_BLUE 0x001F
-#define ILI9341_RED 0xF800
-#define ILI9341_GREEN 0x07E0
-#define ILI9341_CYAN 0x07FF
-#define ILI9341_MAGENTA 0xF81F
-#define ILI9341_YELLOW 0xFFE0
-#define ILI9341_WHITE 0xFFFF
+#define ILI9341_COLOR_BLACK 0x0000
+#define ILI9341_COLOR_BLUE 0x001F
+#define ILI9341_COLOR_RED 0xF800
+#define ILI9341_COLOR_GREEN 0x07E0
+#define ILI9341_COLOR_CYAN 0x07FF
+#define ILI9341_COLOR_MAGENTA 0xF81F
+#define ILI9341_COLOR_YELLOW 0xFFE0
+#define ILI9341_COLOR_WHITE 0xFFFF
 
 #define ILI9341_COLOR565(r, g, b) \
     ((((uint16_t)r & 0xF8) << 8) | (((uint16_t)g & 0xFC) << 3) | (((uint16_t)b & 0xF8) >> 3))
+
+// Other constants
+#define ILI9341_FILL_RECT_BUFFER_SIZE 512  // x 2 bytes per pixel = 1024 bytes
 
 // Handle type definition
 typedef struct {
@@ -73,6 +74,7 @@ ILI9341_HandleTypeDef ILI9341_Init(
     uint16_t width,
     uint16_t height
 );
+void ILI9341_SetOrientation(ILI9341_HandleTypeDef* ili9341, uint8_t rotation);
 void ILI9341_DrawPixel(ILI9341_HandleTypeDef* ili9341, int16_t x, int16_t y, uint16_t color);
 void ILI9341_FillRectangle(ILI9341_HandleTypeDef* ili9341, int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
 void ILI9341_FillScreen(ILI9341_HandleTypeDef* ili9341, uint16_t color);

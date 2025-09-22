@@ -11,7 +11,7 @@ static void ILI9341_TouchSelect(ILI9341_Touch_HandleTypeDef* ili9341_touch) {
     HAL_GPIO_WritePin(ili9341_touch->cs_port, ili9341_touch->cs_pin, GPIO_PIN_RESET);
 }
 
-void ILI9341_TouchDeselect(ILI9341_Touch_HandleTypeDef* ili9341_touch) {
+void ILI9341_Touch_Deselect(ILI9341_Touch_HandleTypeDef* ili9341_touch) {
     HAL_GPIO_WritePin(ili9341_touch->cs_port, ili9341_touch->cs_pin, GPIO_PIN_SET);
 }
 
@@ -36,16 +36,34 @@ ILI9341_Touch_HandleTypeDef ILI9341_Touch_Init(
         .height = height
     };
 
-    ILI9341_TouchDeselect(&ili9341_touch_instance);
+    ILI9341_Touch_Deselect(&ili9341_touch_instance);
 
     return ili9341_touch_instance;
 }
 
-bool ILI9341_TouchPressed(ILI9341_Touch_HandleTypeDef* ili9341_touch) {
+void ILI9341_Touch_SetOrientation(ILI9341_Touch_HandleTypeDef* ili9341_touch, uint8_t rotation) {
+    if ((ili9341_touch->rotation == ILI9341_ROTATION_HORIZONTAL_1 ||
+         ili9341_touch->rotation == ILI9341_ROTATION_HORIZONTAL_2) &&
+        (rotation == ILI9341_ROTATION_VERTICAL_1 || rotation == ILI9341_ROTATION_VERTICAL_2)) {
+        uint16_t temp = ili9341_touch->width;
+        ili9341_touch->width = ili9341_touch->height;
+        ili9341_touch->height = temp;
+    } else if ((ili9341_touch->rotation == ILI9341_ROTATION_VERTICAL_1 ||
+                ili9341_touch->rotation == ILI9341_ROTATION_VERTICAL_2) &&
+               (rotation == ILI9341_ROTATION_HORIZONTAL_1 || rotation == ILI9341_ROTATION_HORIZONTAL_2)) {
+        uint16_t temp = ili9341_touch->width;
+        ili9341_touch->width = ili9341_touch->height;
+        ili9341_touch->height = temp;
+    }
+
+    ili9341_touch->rotation = rotation;
+}
+
+bool ILI9341_Touch_IsPressed(ILI9341_Touch_HandleTypeDef* ili9341_touch) {
     return HAL_GPIO_ReadPin(ili9341_touch->irq_port, ili9341_touch->irq_pin) == GPIO_PIN_RESET;
 }
 
-bool ILI9341_TouchGetCoordinates(ILI9341_Touch_HandleTypeDef* ili9341_touch, uint16_t* x, uint16_t* y) {
+bool ILI9341_Touch_GetCoordinates(ILI9341_Touch_HandleTypeDef* ili9341_touch, uint16_t* x, uint16_t* y) {
     static const uint8_t cmd_read_x[] = {READ_X};
     static const uint8_t cmd_read_y[] = {READ_Y};
     static const uint8_t zeroes_tx[] = {0x00, 0x00};
@@ -56,7 +74,7 @@ bool ILI9341_TouchGetCoordinates(ILI9341_Touch_HandleTypeDef* ili9341_touch, uin
     uint32_t avg_y = 0;
     uint8_t nsamples = 0;
     for (uint8_t i = 0; i < 16; i++) {
-        if (!ILI9341_TouchPressed(ili9341_touch)) break;
+        if (!ILI9341_Touch_IsPressed(ili9341_touch)) break;
 
         nsamples++;
 
@@ -72,7 +90,7 @@ bool ILI9341_TouchGetCoordinates(ILI9341_Touch_HandleTypeDef* ili9341_touch, uin
         avg_y += (((uint16_t)y_raw[0]) << 8) | ((uint16_t)y_raw[1]);
     }
 
-    ILI9341_TouchDeselect(ili9341_touch);
+    ILI9341_Touch_Deselect(ili9341_touch);
 
     if (nsamples < 16) return false;
 
@@ -85,11 +103,49 @@ bool ILI9341_TouchGetCoordinates(ILI9341_Touch_HandleTypeDef* ili9341_touch, uin
     if (raw_y > ILI9341_TOUCH_MAX_RAW_Y) raw_y = ILI9341_TOUCH_MAX_RAW_Y;
 
     // Uncomment this line to calibrate touchscreen:
-    // UART_Printf("raw_x = %d, raw_y = %d\r\n", x, y);
+    // UART_Printf("raw_x = %d, raw_y = %d\r\n", raw_x, raw_y);
 
-    *x = (raw_x - ILI9341_TOUCH_MIN_RAW_X) * ili9341_touch->width / (ILI9341_TOUCH_MAX_RAW_X - ILI9341_TOUCH_MIN_RAW_X);
-    *y =
-        (raw_y - ILI9341_TOUCH_MIN_RAW_Y) * ili9341_touch->height / (ILI9341_TOUCH_MAX_RAW_Y - ILI9341_TOUCH_MIN_RAW_Y);
+    // x = (raw_x - ILI9341_TOUCH_MIN_RAW_X) * ili9341_touch->width /
+    // (ILI9341_TOUCH_MAX_RAW_X - ILI9341_TOUCH_MIN_RAW_X);
+    // y = (raw_y - ILI9341_TOUCH_MIN_RAW_Y) * ili9341_touch->height /
+    // (ILI9341_TOUCH_MAX_RAW_Y - ILI9341_TOUCH_MIN_RAW_Y);
+
+    switch (ili9341_touch->rotation) {
+        case ILI9341_ROTATION_HORIZONTAL_1:
+            *y = (raw_x - ILI9341_TOUCH_MIN_RAW_X) * ili9341_touch->height /
+                 (ILI9341_TOUCH_MAX_RAW_X - ILI9341_TOUCH_MIN_RAW_X);
+            *x = (raw_y - ILI9341_TOUCH_MIN_RAW_Y) * ili9341_touch->width /
+                 (ILI9341_TOUCH_MAX_RAW_Y - ILI9341_TOUCH_MIN_RAW_Y);
+            break;
+        case ILI9341_ROTATION_VERTICAL_1:
+            *x = (raw_x - ILI9341_TOUCH_MIN_RAW_X) * ili9341_touch->width /
+                 (ILI9341_TOUCH_MAX_RAW_X - ILI9341_TOUCH_MIN_RAW_X);
+            *y = ili9341_touch->height - 1 -
+                 (raw_y - ILI9341_TOUCH_MIN_RAW_Y) * ili9341_touch->height /
+                     (ILI9341_TOUCH_MAX_RAW_Y - ILI9341_TOUCH_MIN_RAW_Y);
+            break;
+        case ILI9341_ROTATION_HORIZONTAL_2:
+            *y = ili9341_touch->height - 1 -
+                 (raw_x - ILI9341_TOUCH_MIN_RAW_X) * ili9341_touch->height /
+                     (ILI9341_TOUCH_MAX_RAW_X - ILI9341_TOUCH_MIN_RAW_X);
+            *x = ili9341_touch->width - 1 -
+                 (raw_y - ILI9341_TOUCH_MIN_RAW_Y) * ili9341_touch->width /
+                     (ILI9341_TOUCH_MAX_RAW_Y - ILI9341_TOUCH_MIN_RAW_Y);
+            break;
+        case ILI9341_ROTATION_VERTICAL_2:
+            *x = ili9341_touch->width - 1 -
+                 (raw_x - ILI9341_TOUCH_MIN_RAW_X) * ili9341_touch->width /
+                     (ILI9341_TOUCH_MAX_RAW_X - ILI9341_TOUCH_MIN_RAW_X);
+            *y = (raw_y - ILI9341_TOUCH_MIN_RAW_Y) * ili9341_touch->height /
+                 (ILI9341_TOUCH_MAX_RAW_Y - ILI9341_TOUCH_MIN_RAW_Y);
+            break;
+        default:
+            *x = (raw_x - ILI9341_TOUCH_MIN_RAW_X) * ili9341_touch->width /
+                 (ILI9341_TOUCH_MAX_RAW_X - ILI9341_TOUCH_MIN_RAW_X);
+            *y = (raw_y - ILI9341_TOUCH_MIN_RAW_Y) * ili9341_touch->height /
+                 (ILI9341_TOUCH_MAX_RAW_Y - ILI9341_TOUCH_MIN_RAW_Y);
+            break;
+    }
 
     return true;
 }

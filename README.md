@@ -1,7 +1,5 @@
 # STM32-ILI9341
 
-**Warning:** This library is currently untested, this readme will be updated once I've tested this with real hardware.
-
 STM32 HAL-based library for ILI9341 TFT modules with touchscreen.
 
 This library is a fork of [afiskon/stm32-ili9341][u0] which is based on [afiskon/stm32-st7735][u1] and

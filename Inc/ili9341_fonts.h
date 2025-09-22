@@ -4,10 +4,17 @@
 
 #include "stdint.h"
 
+/**
+ * @brief  Font data structure
+ */
 typedef struct {
+    /** Font width in pixels */
     const uint16_t width;
+    /** Font height in pixels */
     const uint16_t height;
+    /** Number of integers used to store a glyph */
     const uint16_t intsPerGlyph;
+    /** Pointer to the actual font data */
     const uint32_t* data;
 } ILI9341_FontDef;
 
