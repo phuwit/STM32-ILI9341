@@ -711,7 +711,6 @@ void ILI9341_DrawImage(
     ILI9341_Deselect(ili9341);
 }
 
-
 void ILI9341_DrawImageWithClip(
     ILI9341_HandleTypeDef* ili9341,
     int16_t x,
@@ -720,39 +719,42 @@ void ILI9341_DrawImageWithClip(
     uint16_t h,
     const uint16_t* data
 ) {
-    int16_t dataRow = 0;
-    if (y < 0) dataRow = -y;
-
-    uint16_t readDataFromIndex = 0;
-    int16_t columnStart = x;
-    if (x < 0) {
-        readDataFromIndex -= x;
-        columnStart = 0;
+    int16_t src_x0 = 0, dst_x0 = x;
+    int16_t src_x1 = w, dst_x1 = x + w;
+    if (dst_x0 < 0) {
+        src_x0 = -dst_x0;
+        dst_x0 = 0;
     }
-
-    uint16_t readDataToIndex = w;
-    int16_t columnEnd = x + w - 1;
-    if (columnEnd >= ili9341->width) {
-        readDataToIndex -= (w + x) - ili9341->width;
-        columnEnd = ili9341->width - 1;
+    if (dst_x1 > ili9341->width) {
+        src_x1 -= (dst_x1 - ili9341->width);
+        dst_x1 = ili9341->width;
     }
+    uint16_t clipped_w = src_x1 - src_x0;
+    if (clipped_w <= 0) return;
 
-    uint16_t bufferSize = readDataToIndex - readDataFromIndex;
-    if (bufferSize == 0 || h == 0) return;
-    uint16_t buffer[bufferSize];
+    int16_t src_y0 = 0, dst_y0 = y;
+    int16_t src_y1 = h, dst_y1 = y + h;
+    if (dst_y0 < 0) {
+        src_y0 = -dst_y0;
+        dst_y0 = 0;
+    }
+    if (dst_y1 > ili9341->height) {
+        src_y1 -= (dst_y1 - ili9341->height);
+        dst_y1 = ili9341->height;
+    }
+    uint16_t clipped_h = src_y1 - src_y0;
+    if (clipped_h <= 0) return;
 
     ILI9341_Select(ili9341);
-    for (; dataRow < h; dataRow += 1) {
-        int16_t displayRow = y + dataRow;
-        if (displayRow < 0) continue;
-        if (displayRow >= ili9341->height) break;
-        memcpy(buffer, &data[dataRow * w + readDataFromIndex], sizeof(uint16_t) * bufferSize);
-        ILI9341_SetAddressWindow(ili9341, columnStart, displayRow, columnEnd, displayRow);
-        ILI9341_WriteData(ili9341, (uint8_t*)buffer, sizeof(uint16_t) * bufferSize);
+    ILI9341_SetAddressWindow(ili9341, dst_x0, dst_y0, dst_x0 + clipped_w - 1, dst_y0 + clipped_h - 1);
+
+    for (uint16_t row = 0; row < clipped_h; row++) {
+        const uint16_t* row_ptr = data + (src_y0 + row) * w + src_x0;
+        ILI9341_WriteData(ili9341, (uint8_t*)row_ptr, clipped_w * sizeof(uint16_t));
     }
+
     ILI9341_Deselect(ili9341);
 }
-
 
 void ILI9341_InvertColors(ILI9341_HandleTypeDef* ili9341, bool invert) {
     ILI9341_Select(ili9341);
