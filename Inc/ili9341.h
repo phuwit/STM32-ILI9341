@@ -2,6 +2,7 @@
 #ifndef __ILI9341_H__
 #define __ILI9341_H__
 
+#include <stdint.h>
 #include "ili9341_fonts.h"
 #include "math.h"
 #include "stdbool.h"
@@ -100,7 +101,7 @@ ILI9341_HandleTypeDef ILI9341_Init(
  * @param ili9341 Pointer to ILI9341 handle structure
  * @param rotation New display rotation, one of ILI9341_ROTATION_* values
  */
-void ILI9341_SetOrientation(ILI9341_HandleTypeDef* ili9341, uint8_t rotation);
+void ILI9341_SetOrientation(ILI9341_HandleTypeDef* ili9341, uint8_t rotation, uint8_t scrollBit);
 
 /**
  * @brief Draw a single pixel at specified coordinates
@@ -409,5 +410,11 @@ void ILI9341_DrawPolygonThick(
  * intersections for scanline is 32.
  */
 void ILI9341_FillPolygon(ILI9341_HandleTypeDef* ili9341, int16_t* x, int16_t* y, uint16_t n, uint16_t color);
+
+void ILI9341_DefineVerticalScrollArea(ILI9341_HandleTypeDef* ili9341, uint16_t topFixedLines, uint16_t bottomFixedLines);
+
+void ILI9341_DoVerticalScroll(ILI9341_HandleTypeDef* ili9341, uint16_t lines);
+
+void ILI9341_SetModeNormal(ILI9341_HandleTypeDef* ili9341);
 
 #endif  // __ILI9341_H__

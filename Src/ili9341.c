@@ -294,32 +294,32 @@ ILI9341_HandleTypeDef ILI9341_Init(
     return ili9341_instance;
 }
 
-void ILI9341_SetOrientation(ILI9341_HandleTypeDef* ili9341, uint8_t rotation) {
+void ILI9341_SetOrientation(ILI9341_HandleTypeDef* ili9341, uint8_t rotation, uint8_t scrollBit) {
     ILI9341_Select(ili9341);
 
     // MADCTL
     ILI9341_WriteCommand(ili9341, 0x36);
     switch (rotation) {
         case ILI9341_ROTATION_VERTICAL_1: {
-            uint8_t rotation = ILI9341_MADCTL_MX | ILI9341_MADCTL_BGR;
+            uint8_t rotation = ILI9341_MADCTL_MX | ILI9341_MADCTL_BGR | (scrollBit << 4);
             uint8_t data[] = {rotation};
             ILI9341_WriteData(ili9341, data, sizeof(data));
             break;
         }
         case ILI9341_ROTATION_HORIZONTAL_1: {
-            uint8_t rotation = ILI9341_MADCTL_MX | ILI9341_MADCTL_MY | ILI9341_MADCTL_MV | ILI9341_MADCTL_BGR;
+            uint8_t rotation = ILI9341_MADCTL_MX | ILI9341_MADCTL_MY | ILI9341_MADCTL_MV | ILI9341_MADCTL_BGR | (scrollBit << 4);
             uint8_t data[] = {rotation};
             ILI9341_WriteData(ili9341, data, sizeof(data));
             break;
         }
         case ILI9341_ROTATION_HORIZONTAL_2: {
-            uint8_t rotation = ILI9341_MADCTL_MV | ILI9341_MADCTL_BGR;
+            uint8_t rotation = ILI9341_MADCTL_MV | ILI9341_MADCTL_BGR | (scrollBit << 4);
             uint8_t data[] = {rotation};
             ILI9341_WriteData(ili9341, data, sizeof(data));
             break;
         }
         case ILI9341_ROTATION_VERTICAL_2: {
-            uint8_t rotation = ILI9341_MADCTL_MY | ILI9341_MADCTL_BGR;
+            uint8_t rotation = ILI9341_MADCTL_MY | ILI9341_MADCTL_BGR | (scrollBit << 4);
             uint8_t data[] = {rotation};
             ILI9341_WriteData(ili9341, data, sizeof(data));
             break;
@@ -1066,5 +1066,40 @@ void ILI9341_FillPolygon(ILI9341_HandleTypeDef* ili9341, int16_t* x, int16_t* y,
         }
     }
 
+    ILI9341_Deselect(ili9341);
+}
+
+
+void ILI9341_DefineVerticalScrollArea(ILI9341_HandleTypeDef* ili9341, uint16_t topFixedLines, uint16_t bottomFixedLines) {
+    uint16_t verticalScrollingArea = 320 - topFixedLines - bottomFixedLines;
+
+    ILI9341_Select(ili9341);
+
+    topFixedLines = topFixedLines << 8 | topFixedLines >> 8;
+    verticalScrollingArea = verticalScrollingArea << 8 | verticalScrollingArea >> 8;
+    bottomFixedLines = bottomFixedLines << 8 | bottomFixedLines >> 8;
+
+    ILI9341_WriteCommand(ili9341, 0x33);
+    ILI9341_WriteData(ili9341, (uint8_t*)&topFixedLines, sizeof(uint16_t));
+    ILI9341_WriteData(ili9341, (uint8_t*)&verticalScrollingArea, sizeof(uint16_t));
+    ILI9341_WriteData(ili9341, (uint8_t*)&bottomFixedLines, sizeof(uint16_t));
+
+    ILI9341_Deselect(ili9341);
+}
+
+void ILI9341_DoVerticalScroll(ILI9341_HandleTypeDef* ili9341, uint16_t lines) {
+    ILI9341_Select(ili9341);
+
+    lines = lines >> 8 | lines << 8;
+
+    ILI9341_WriteCommand(ili9341, 0x37);
+    ILI9341_WriteData(ili9341, (uint8_t*)&lines, sizeof(uint16_t));
+
+    ILI9341_Deselect(ili9341);
+}
+
+void ILI9341_SetModeNormal(ILI9341_HandleTypeDef* ili9341) {
+    ILI9341_Select(ili9341);
+    ILI9341_WriteCommand(ili9341, 0x13);
     ILI9341_Deselect(ili9341);
 }
