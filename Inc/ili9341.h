@@ -10,6 +10,9 @@
 #include "stdlib.h"
 #include "stm32f7xx_hal.h"
 
+// optionally enable dma by uncommenting the line below
+// #define ILI9341_ENABLE_DMA
+
 #define ILI9341_MADCTL_MY 0x80
 #define ILI9341_MADCTL_MX 0x40
 #define ILI9341_MADCTL_MV 0x20

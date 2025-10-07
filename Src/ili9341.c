@@ -1,9 +1,15 @@
 /* vim: set ai et ts=4 sw=4: */
 #include "ili9341.h"
+#include <stdbool.h>
 #include <stdint.h>
+#include "main.h"
 #include <string.h>
 
 #include "stm32f7xx_hal.h"
+#include "stm32f7xx_hal_spi.h"
+#include "main.h"
+
+static uint8_t ili9341_cmd_dma_buffer;
 
 /**
  * @brief Select the ILI9341 display
@@ -49,7 +55,16 @@ static void ILI9341_WriteData(ILI9341_HandleTypeDef* ili9341, uint8_t* buff, siz
     // split data in small chunks because HAL can't send more then 64K at once
     while (buff_size > 0) {
         uint16_t chunk_size = buff_size > 32768 ? 32768 : buff_size;
+
+        #ifdef ILI9341_ENABLE_DMA
+        while (!spi5Transferable) {}
+        spi5Transferable = false;
+        HAL_SPI_Transmit_DMA(ili9341->spi_handle, buff, chunk_size);
+        while (!spi5Transferable) {}
+        #else
         HAL_SPI_Transmit(ili9341->spi_handle, buff, chunk_size, HAL_MAX_DELAY);
+        #endif
+
         buff += chunk_size;
         buff_size -= chunk_size;
     }
